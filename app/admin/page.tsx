@@ -107,7 +107,7 @@ export default function AdminPage() {
     }
   }
   // allPhotos collected in reverse (oldest first), flip to latest first
-  for (const v of visitorMap.values()) v.allPhotos.reverse();
+  Array.from(visitorMap.values()).forEach(v => v.allPhotos.reverse());
   const visitors = Array.from(visitorMap.values()).reverse(); // latest first
 
   const totalCareer = visitors.filter(r => r.theme_type === 'career').length;
