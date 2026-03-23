@@ -35,7 +35,12 @@ export default function ResultScreen({
   const cleanPhone = userMobile.replace(/\D/g, '');
   // Auto-add India country code (91) if 10-digit number entered
   const whatsappPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-  const whatsappUrl = `https://wa.me/${whatsappPhone}`;
+  // Include image URL in message if it's a public URL (not base64)
+  const isPublicUrl = transformedImageUrl && !transformedImageUrl.startsWith('data:');
+  const whatsappMessage = isPublicUrl
+    ? `Here is your AI transformed photo from Gemini Magic Booth! 🎉\n\n${transformedImageUrl}`
+    : `Thank you for visiting Gemini Magic Booth! 🎉`;
+  const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`;
 
   const handleDownload = async () => {
     try {
