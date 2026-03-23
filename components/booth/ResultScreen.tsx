@@ -33,7 +33,9 @@ export default function ResultScreen({
 
   // Clean phone number and build WhatsApp URL
   const cleanPhone = userMobile.replace(/\D/g, '');
-  const whatsappUrl = `https://wa.me/${cleanPhone}`;
+  // Auto-add India country code (91) if 10-digit number entered
+  const whatsappPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+  const whatsappUrl = `https://wa.me/${whatsappPhone}`;
 
   const handleDownload = async () => {
     try {
@@ -145,7 +147,7 @@ export default function ResultScreen({
             <MessageCircle className="w-5 h-5 text-green-400" />
             <h2 className="font-bold text-lg">Send via WhatsApp</h2>
           </div>
-          <p className="text-gray-400 text-sm mb-4">Scan this QR with your phone to open WhatsApp chat with <span className="text-white font-medium">+{cleanPhone}</span></p>
+          <p className="text-gray-400 text-sm mb-4">Scan this QR with your phone to open WhatsApp chat with <span className="text-white font-medium">+{whatsappPhone}</span></p>
           <div className="flex justify-center mb-4">
             <div className="bg-white p-4 rounded-xl">
               <QRCodeSVG value={whatsappUrl} size={200} />
