@@ -1,8 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
-import { createClient } from '@/lib/supabase/server';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+async function uploadToSupabase(base64Data: string, mimeType: string): Promise<string | null> {
+  try {
+    const ext = mimeType.split('/')[1] || 'jpg';
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+
+    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/transformations/${fileName}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'Content-Type': mimeType,
+      },
+      body: imageBuffer,
+    });
+
+    if (!uploadRes.ok) {
+      const err = await uploadRes.text();
+      console.error('Upload failed:', uploadRes.status, err);
+      return null;
+    }
+
+    return `${SUPABASE_URL}/storage/v1/object/public/transformations/${fileName}`;
+  } catch (e) {
+    console.error('Upload exception:', e);
+    return null;
+  }
+}
+
+async function saveToDb(userInfo: Record<string, string>, themeTitle: string, themeType: string, careerStyle: string, publicUrl: string, originalPhoto: string) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/user_transformations`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'apikey': SERVICE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        name: userInfo.name,
+        organization: userInfo.organization,
+        email: userInfo.email,
+        mobile_number: userInfo.mobile,
+        selected_theme: themeTitle,
+        theme_type: themeType,
+        career_style: themeType === 'career' ? careerStyle : null,
+        transformed_photo_url: publicUrl,
+        original_photo_url: originalPhoto.substring(0, 100),
+      }),
+    });
+    if (!res.ok) console.error('DB insert failed:', await res.text());
+  } catch (e) {
+    console.error('DB insert exception:', e);
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,7 +82,6 @@ export async function POST(req: NextRequest) {
       finalPrompt = `Edit the image as follows: ${themePrompt}. Keep the person's identity intact.`;
     }
 
-    // Extract base64 data from data URL
     const base64Image = imageData.split(',')[1];
     const mimeType = (imageData.split(';')[0].split(':')[1] as string) || 'image/jpeg';
 
@@ -33,7 +90,6 @@ export async function POST(req: NextRequest) {
       { inlineData: { mimeType, data: base64Image } },
     ];
 
-    // Add reference images if provided
     if (referenceImages && referenceImages.length > 0) {
       for (const refImg of referenceImages) {
         const refBase64 = (refImg as string).split(',')[1];
@@ -45,13 +101,10 @@ export async function POST(req: NextRequest) {
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-flash-image-preview',
       contents: [{ role: 'user', parts }],
-      config: {
-        responseModalities: ['IMAGE', 'TEXT'],
-      },
+      config: { responseModalities: ['IMAGE', 'TEXT'] },
     });
 
     const responseParts = response.candidates?.[0]?.content?.parts;
-
     if (!responseParts) {
       return NextResponse.json({ error: 'No response from AI model' }, { status: 500 });
     }
@@ -60,71 +113,28 @@ export async function POST(req: NextRequest) {
       if (part.inlineData) {
         const transformedImage = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
 
-        // Upload to Supabase Storage using service role key
-        try {
-          const supabase = createClient();
-          const base64Data = part.inlineData.data;
-          const imageBuffer = Buffer.from(base64Data, 'base64');
-          const ext = (part.inlineData.mimeType || 'image/jpeg').split('/')[1] || 'jpg';
-          const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const publicUrl = await uploadToSupabase(part.inlineData.data, part.inlineData.mimeType || 'image/jpeg');
 
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('transformations')
-            .upload(fileName, imageBuffer, { contentType: part.inlineData.mimeType || 'image/jpeg', upsert: false });
+        if (publicUrl && userInfo) {
+          await saveToDb(userInfo, themeTitle || themeType, themeType, careerStyle, publicUrl, imageData);
 
-          if (uploadError) {
-            console.error('Storage upload error:', uploadError.message, uploadError);
-            return NextResponse.json({ transformedImage, uploadError: uploadError.message });
+          const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+          if (webhookUrl) {
+            fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: userInfo.name, organization: userInfo.organization,
+                email: userInfo.email, mobile: userInfo.mobile,
+                theme: themeTitle || themeType, themeType,
+                careerStyle: themeType === 'career' ? careerStyle : null,
+                imageUrl: publicUrl, timestamp: new Date().toISOString(),
+              }),
+            }).catch(() => {});
           }
-
-          if (!uploadError && uploadData) {
-            const { data: urlData } = supabase.storage.from('transformations').getPublicUrl(uploadData.path);
-            const publicUrl = urlData.publicUrl;
-
-            // Save to DB
-            if (userInfo) {
-              await supabase.from('user_transformations').insert({
-                name: userInfo.name,
-                organization: userInfo.organization,
-                email: userInfo.email,
-                mobile_number: userInfo.mobile,
-                selected_theme: themeTitle || themeType,
-                theme_type: themeType,
-                career_style: themeType === 'career' ? careerStyle : null,
-                transformed_photo_url: publicUrl,
-                original_photo_url: (imageData as string).substring(0, 100),
-              });
-
-              // Save to Google Sheets
-              const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
-              if (webhookUrl) {
-                await fetch(webhookUrl, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    name: userInfo.name,
-                    organization: userInfo.organization,
-                    email: userInfo.email,
-                    mobile: userInfo.mobile,
-                    theme: themeTitle || themeType,
-                    themeType,
-                    careerStyle: themeType === 'career' ? careerStyle : null,
-                    imageUrl: publicUrl,
-                    timestamp: new Date().toISOString(),
-                  }),
-                }).catch(() => {});
-              }
-            }
-
-            return NextResponse.json({ transformedImage, publicUrl });
-          }
-        } catch (storageErr: unknown) {
-          const msg = storageErr instanceof Error ? storageErr.message : String(storageErr);
-          console.error('Storage exception:', msg);
-          return NextResponse.json({ transformedImage, uploadError: msg });
         }
 
-        return NextResponse.json({ transformedImage });
+        return NextResponse.json({ transformedImage, publicUrl: publicUrl || undefined });
       }
     }
 
