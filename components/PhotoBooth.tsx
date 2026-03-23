@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { AppState, AppScreen, Theme, CareerStyle, UserInfo } from '@/types';
 import LandingScreen from './booth/LandingScreen';
 import CameraScreen from './booth/CameraScreen';
@@ -26,6 +27,7 @@ const initialState: AppState = {
 
 export default function PhotoBooth() {
   const [state, setState] = useState<AppState>(initialState);
+  const supabase = createClient();
   // After mount, restore saved session (avoids hydration mismatch)
   useEffect(() => {
     try {
@@ -96,6 +98,23 @@ export default function PhotoBooth() {
 
         // Use public URL from server-side upload, or fall back to base64
         const publicUrl: string = data.publicUrl || data.transformedImage;
+
+        // Save user data to DB (client-side, always runs)
+        if (state.userInfo) {
+          supabase.from('user_transformations').insert({
+            name: state.userInfo.name,
+            organization: state.userInfo.organization,
+            email: state.userInfo.email,
+            mobile_number: state.userInfo.mobile,
+            selected_theme: themeTitle,
+            theme_type: themeType,
+            career_style: themeType === 'career' ? careerStyle : null,
+            transformed_photo_url: data.publicUrl || '',
+            original_photo_url: state.capturedPhoto.substring(0, 100),
+          }).then(({ error }) => {
+            if (error) console.error('DB save error:', error.message);
+          });
+        }
 
         go('result', { transformedImageUrl: publicUrl });
       } catch (err: unknown) {
