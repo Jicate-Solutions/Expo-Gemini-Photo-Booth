@@ -36,8 +36,8 @@ export default function ResultScreen({
   // Always use 91 (India) as default — skip if number already starts with 91
   const whatsappPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
   // Include image URL in message if it's a public URL (not base64)
-  const isPublicUrl = transformedImageUrl && !transformedImageUrl.startsWith('data:') && !transformedImageUrl.startsWith('UPLOAD_');
-  const uploadError = transformedImageUrl?.startsWith('UPLOAD_') ? transformedImageUrl : null;
+  const isPublicUrl = transformedImageUrl && !transformedImageUrl.startsWith('data:');
+  const uploadError = null;
   const whatsappMessage = isPublicUrl
     ? `Here is your AI transformed photo from Gemini Magic Booth! 🎉\n\n${transformedImageUrl}`
     : `Thank you for visiting Gemini Magic Booth! 🎉`;

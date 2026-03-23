@@ -94,36 +94,16 @@ export default function PhotoBooth() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Transformation failed');
 
-        // Upload generated image to Supabase using direct fetch (confirmed working)
-        let photoPublicUrl = '';
-        try {
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-          const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-          const base64 = data.transformedImage.split(',')[1];
-          const mimeType = data.transformedImage.split(';')[0].split(':')[1] || 'image/jpeg';
-          const ext = mimeType.split('/')[1] || 'jpg';
-          const byteChars = atob(base64);
-          const byteArray = new Uint8Array(byteChars.length);
-          for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
-          const blob = new Blob([byteArray], { type: mimeType });
-          const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-          const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/transformations/${fileName}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${anonKey}`,
-              'Content-Type': mimeType,
-            },
-            body: blob,
-          });
-          if (uploadRes.ok) {
-            photoPublicUrl = `${supabaseUrl}/storage/v1/object/public/transformations/${fileName}`;
-          } else {
-            const err = await uploadRes.text();
-            photoPublicUrl = `UPLOAD_ERROR:${uploadRes.status}:${err}`;
-          }
-        } catch (e) {
-          photoPublicUrl = `UPLOAD_EXCEPTION:${e}`;
-        }
+        // Upload image via server-side API route
+        const base64 = data.transformedImage.split(',')[1];
+        const mimeType = data.transformedImage.split(';')[0].split(':')[1] || 'image/jpeg';
+        const uploadRes = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64, mimeType }),
+        });
+        const uploadData = await uploadRes.json();
+        const photoPublicUrl: string = uploadData.publicUrl || '';
 
         const publicUrl: string = photoPublicUrl || data.transformedImage;
 
