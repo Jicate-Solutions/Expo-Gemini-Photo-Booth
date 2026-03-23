@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { AppState, AppScreen, Theme, CareerStyle, UserInfo } from '@/types';
+import { STICKER_STORAGE_KEY, MAX_STICKERS, StickerImage } from '@/app/sticker-sheet/page';
 import LandingScreen from './booth/LandingScreen';
 import CameraScreen from './booth/CameraScreen';
 import UserInfoScreen from './booth/UserInfoScreen';
@@ -106,6 +107,24 @@ export default function PhotoBooth() {
           });
           const uploadData = await uploadRes.json();
           photoPublicUrl = uploadData.publicUrl || '';
+          // Auto-save to sticker sheet
+          if (photoPublicUrl) {
+            try {
+              const existing: StickerImage[] = JSON.parse(localStorage.getItem(STICKER_STORAGE_KEY) || '[]');
+              if (existing.length < MAX_STICKERS) {
+                existing.push({
+                  id: Date.now().toString(),
+                  url: photoPublicUrl,
+                  name: state.userInfo?.name || '',
+                  theme: themeTitle,
+                  addedAt: new Date().toISOString(),
+                });
+                localStorage.setItem(STICKER_STORAGE_KEY, JSON.stringify(existing));
+              }
+            } catch (stickerErr) {
+              console.error('Sticker save failed:', stickerErr);
+            }
+          }
         } catch (e) {
           console.error('Upload failed:', e);
         }

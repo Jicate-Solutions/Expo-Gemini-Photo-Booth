@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle } from 'lucide-react';
+import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -142,6 +142,11 @@ export default function ResultScreen({
           <Button onClick={onTryAnotherTheme} className="w-full bg-pink-600 hover:bg-pink-500 text-white gap-2 py-5 text-base font-semibold">
             <RefreshCw className="w-5 h-5" /> Try Another Theme
           </Button>
+
+          <a href="/sticker-sheet" target="_blank" rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white text-sm font-semibold px-4 py-3 rounded-xl transition-colors">
+            <Layers className="w-4 h-4" /> View Sticker Sheet
+          </a>
 
         </div>
       </div>
