@@ -12,7 +12,6 @@ interface ResultScreenProps {
   transformedImageUrl: string;
   selectedTheme: Theme | null;
   userMobile: string;
-  uploadDebug: string;
   onTryAnotherTheme: () => void;
   onStartOver: () => void;
   onEdit: (prompt: string, referenceImages: string[]) => void;
@@ -22,7 +21,6 @@ export default function ResultScreen({
   transformedImageUrl,
   selectedTheme,
   userMobile,
-  uploadDebug,
   onTryAnotherTheme,
   onStartOver,
   onEdit,
@@ -89,12 +87,6 @@ export default function ResultScreen({
 
         {/* Actions */}
         <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col gap-4">
-          {uploadDebug && (
-            <div className={`border rounded-xl p-3 text-xs break-all ${uploadDebug.startsWith('OK') ? 'bg-green-900/30 border-green-500/40 text-green-300' : 'bg-red-900/30 border-red-500/40 text-red-300'}`}>
-              <p className="font-bold mb-1">Upload status (share with support):</p>
-              <p>{uploadDebug}</p>
-            </div>
-          )}
 
           {/* WhatsApp QR Button */}
           {cleanPhone && (

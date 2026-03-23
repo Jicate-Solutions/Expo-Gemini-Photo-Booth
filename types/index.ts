@@ -34,7 +34,6 @@ export interface AppState {
   careerStyle: CareerStyle;
   customPrompt: string;
   transformedImageUrl: string | null;
-  uploadDebug: string;
   userInfo: UserInfo | null;
   errorMessage: string;
   referenceImages: string[];
