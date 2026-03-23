@@ -36,7 +36,8 @@ export default function ResultScreen({
   // Always use 91 (India) as default — skip if number already starts with 91
   const whatsappPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
   // Include image URL in message if it's a public URL (not base64)
-  const isPublicUrl = transformedImageUrl && !transformedImageUrl.startsWith('data:');
+  const isPublicUrl = transformedImageUrl && !transformedImageUrl.startsWith('data:') && !transformedImageUrl.startsWith('UPLOAD_');
+  const uploadError = transformedImageUrl?.startsWith('UPLOAD_') ? transformedImageUrl : null;
   const whatsappMessage = isPublicUrl
     ? `Here is your AI transformed photo from Gemini Magic Booth! 🎉\n\n${transformedImageUrl}`
     : `Thank you for visiting Gemini Magic Booth! 🎉`;
@@ -86,6 +87,12 @@ export default function ResultScreen({
 
         {/* Actions */}
         <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col gap-4">
+          {uploadError && (
+            <div className="bg-red-900/30 border border-red-500/40 rounded-xl p-3 text-xs text-red-300 break-all">
+              <p className="font-bold mb-1">Upload Error (share this):</p>
+              <p>{uploadError}</p>
+            </div>
+          )}
 
           {/* WhatsApp QR Button */}
           {cleanPhone && (

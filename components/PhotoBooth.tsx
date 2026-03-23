@@ -119,10 +119,10 @@ export default function PhotoBooth() {
             photoPublicUrl = `${supabaseUrl}/storage/v1/object/public/transformations/${fileName}`;
           } else {
             const err = await uploadRes.text();
-            console.error('Upload failed:', uploadRes.status, err);
+            photoPublicUrl = `UPLOAD_ERROR:${uploadRes.status}:${err}`;
           }
         } catch (e) {
-          console.error('Upload exception:', e);
+          photoPublicUrl = `UPLOAD_EXCEPTION:${e}`;
         }
 
         const publicUrl: string = photoPublicUrl || data.transformedImage;
