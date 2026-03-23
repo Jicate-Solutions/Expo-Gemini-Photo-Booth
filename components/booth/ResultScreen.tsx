@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { QrCode, Wand2, RotateCcw, RefreshCw, X, Upload } from 'lucide-react';
+import { Wand2, RotateCcw, RefreshCw, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { QRCodeSVG } from 'qrcode.react';
 import { Theme } from '@/types';
 
 interface ResultScreenProps {
@@ -23,16 +21,10 @@ export default function ResultScreen({
   onStartOver,
   onEdit,
 }: ResultScreenProps) {
-  const [showQR, setShowQR] = useState(false);
   const [editPrompt, setEditPrompt] = useState('');
   const [editRefs, setEditRefs] = useState<string[]>([]);
   const [showEdit, setShowEdit] = useState(false);
   const editFileRef = useRef<HTMLInputElement>(null);
-
-  const isBase64 = transformedImageUrl.startsWith('data:');
-  const downloadUrl = typeof window !== 'undefined' && !isBase64
-    ? `${window.location.origin}/download?url=${encodeURIComponent(transformedImageUrl)}&theme=${encodeURIComponent(selectedTheme?.title || 'Custom')}`
-    : '';
 
   const handleDownload = async () => {
     try {
@@ -78,10 +70,6 @@ export default function ResultScreen({
 
         {/* Actions */}
         <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col gap-4">
-          <Button onClick={() => setShowQR(true)} className="w-full bg-purple-600 hover:bg-purple-500 text-white gap-2 py-5 text-base font-semibold">
-            <QrCode className="w-5 h-5" /> Scan QR to Download
-          </Button>
-
           <Button onClick={() => setShowEdit(!showEdit)} className="w-full bg-blue-600 hover:bg-blue-500 text-white gap-2 py-5 text-base font-semibold">
             <Wand2 className="w-5 h-5" /> Edit with AI
           </Button>
@@ -133,30 +121,7 @@ export default function ResultScreen({
         </div>
       </div>
 
-      {/* QR Dialog */}
-      <Dialog open={showQR} onOpenChange={setShowQR}>
-        <DialogContent className="bg-gray-900 border-purple-500/30 text-white text-center max-w-sm">
-          <h2 className="font-bold text-lg mb-2">Scan to Download</h2>
-          {isBase64 ? (
-            <div className="py-6">
-              <p className="text-yellow-400 text-sm mb-2">⚠️ Storage not configured yet</p>
-              <p className="text-gray-400 text-xs">The Supabase storage bucket needs to be created first. Please set up the &ldquo;transformations&rdquo; bucket in your Supabase dashboard to enable QR downloads.</p>
-            </div>
-          ) : (
-            <>
-              <p className="text-gray-400 text-sm mb-6">Scan this QR code with your phone to download your photo</p>
-              <div className="flex justify-center mb-6">
-                <div className="bg-white p-4 rounded-xl">
-                  <QRCodeSVG value={downloadUrl} size={200} />
-                </div>
-              </div>
-            </>
-          )}
-          <Button onClick={() => setShowQR(false)} variant="outline" className="border-white/20">
-            Close
-          </Button>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }
