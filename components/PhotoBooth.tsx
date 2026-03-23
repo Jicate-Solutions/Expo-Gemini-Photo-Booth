@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { AppState, AppScreen, Theme, CareerStyle, UserInfo } from '@/types';
 import LandingScreen from './booth/LandingScreen';
 import CameraScreen from './booth/CameraScreen';
@@ -94,10 +95,34 @@ export default function PhotoBooth() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Transformation failed');
 
-        // Use public URL from server-side upload, or fall back to base64
-        const publicUrl: string = data.publicUrl || data.transformedImage;
+        // Upload generated image to Supabase from client (anon key has upload permission)
+        let photoPublicUrl = '';
+        try {
+          const supabase = createClient();
+          const base64 = data.transformedImage.split(',')[1];
+          const mimeType = data.transformedImage.split(';')[0].split(':')[1] || 'image/jpeg';
+          const ext = mimeType.split('/')[1] || 'jpg';
+          const byteChars = atob(base64);
+          const byteArray = new Uint8Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+          const blob = new Blob([byteArray], { type: mimeType });
+          const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('transformations')
+            .upload(fileName, blob, { contentType: mimeType, upsert: false });
+          if (!uploadError && uploadData) {
+            const { data: urlData } = supabase.storage.from('transformations').getPublicUrl(uploadData.path);
+            photoPublicUrl = urlData.publicUrl;
+          } else if (uploadError) {
+            console.error('Upload error:', uploadError.message);
+          }
+        } catch (e) {
+          console.error('Upload exception:', e);
+        }
 
-        // Save user data via dedicated API route (server-side, service role key)
+        const publicUrl: string = photoPublicUrl || data.transformedImage;
+
+        // Save user data via dedicated API route
         if (state.userInfo) {
           fetch('/api/save-user', {
             method: 'POST',
@@ -110,7 +135,7 @@ export default function PhotoBooth() {
               theme: themeTitle,
               themeType,
               careerStyle,
-              photoUrl: data.publicUrl || '',
+              photoUrl: photoPublicUrl,
               originalPhoto: state.capturedPhoto,
             }),
           }).catch(e => console.error('Save user failed:', e));
