@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Lock, Download, Users, Camera, Briefcase, Star, LogOut, Eye, EyeOff, Trash2, ChevronDown, ChevronUp, RefreshCw, MessageCircle } from 'lucide-react';
 
 interface Row {
@@ -21,11 +21,27 @@ export default function AdminPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Row[]>([]);
   const [deletingEmail, setDeletingEmail] = useState<string | null>(null);
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Auto-login on page load if session exists
+  useEffect(() => {
+    const saved = sessionStorage.getItem('admin_pwd');
+    if (saved) {
+      setPassword(saved);
+      fetchData(saved).then(rows => {
+        setData(rows);
+        setLoggedIn(true);
+      }).catch(() => {
+        sessionStorage.removeItem('admin_pwd');
+      }).finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   const fetchData = async (pwd: string) => {
     const res = await fetch('/api/admin', {
@@ -44,6 +60,7 @@ export default function AdminPage() {
     setError('');
     try {
       const rows = await fetchData(password);
+      sessionStorage.setItem('admin_pwd', password);
       setData(rows);
       setLoggedIn(true);
     } catch {
@@ -120,6 +137,10 @@ export default function AdminPage() {
   const totalFun = data.filter(r => r.theme_type === 'fun').length;
 
   // ── LOGIN SCREEN ──
+  if (loading) {
+    return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
+  }
+
   if (!loggedIn) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
@@ -180,7 +201,7 @@ export default function AdminPage() {
             className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
             <Download className="w-4 h-4" /> Download CSV
           </button>
-          <button onClick={() => { setLoggedIn(false); setPassword(''); setData([]); }}
+          <button onClick={() => { sessionStorage.removeItem('admin_pwd'); setLoggedIn(false); setPassword(''); setData([]); }}
             className="flex items-center gap-2 text-gray-400 hover:text-white text-sm px-3 py-2 rounded-xl hover:bg-white/5 transition-colors">
             <LogOut className="w-4 h-4" /> Logout
           </button>
