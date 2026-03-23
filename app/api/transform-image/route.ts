@@ -6,7 +6,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 export async function POST(req: NextRequest) {
   try {
-    const { imageData, themePrompt, themeType, careerStyle, isEdit, referenceImages } = await req.json();
+    const { imageData, themePrompt, themeTitle, themeType, careerStyle, isEdit, referenceImages, userInfo } = await req.json();
 
     if (!imageData || !themePrompt) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -74,7 +74,44 @@ export async function POST(req: NextRequest) {
 
           if (!uploadError && uploadData) {
             const { data: urlData } = supabase.storage.from('transformations').getPublicUrl(uploadData.path);
-            return NextResponse.json({ transformedImage, publicUrl: urlData.publicUrl });
+            const publicUrl = urlData.publicUrl;
+
+            // Save to DB
+            if (userInfo) {
+              await supabase.from('user_transformations').insert({
+                name: userInfo.name,
+                organization: userInfo.organization,
+                email: userInfo.email,
+                mobile_number: userInfo.mobile,
+                selected_theme: themeTitle || themeType,
+                theme_type: themeType,
+                career_style: themeType === 'career' ? careerStyle : null,
+                transformed_photo_url: publicUrl,
+                original_photo_url: (imageData as string).substring(0, 100),
+              });
+
+              // Save to Google Sheets
+              const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+              if (webhookUrl) {
+                await fetch(webhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    name: userInfo.name,
+                    organization: userInfo.organization,
+                    email: userInfo.email,
+                    mobile: userInfo.mobile,
+                    theme: themeTitle || themeType,
+                    themeType,
+                    careerStyle: themeType === 'career' ? careerStyle : null,
+                    imageUrl: publicUrl,
+                    timestamp: new Date().toISOString(),
+                  }),
+                }).catch(() => {});
+              }
+            }
+
+            return NextResponse.json({ transformedImage, publicUrl });
           }
         } catch (_) {
           // fall through to return base64 only

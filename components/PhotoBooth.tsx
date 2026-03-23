@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { AppState, AppScreen, Theme, CareerStyle, UserInfo } from '@/types';
-import { createClient } from '@/lib/supabase/client';
 import LandingScreen from './booth/LandingScreen';
 import CameraScreen from './booth/CameraScreen';
 import UserInfoScreen from './booth/UserInfoScreen';
@@ -27,8 +26,6 @@ const initialState: AppState = {
 
 export default function PhotoBooth() {
   const [state, setState] = useState<AppState>(initialState);
-  const supabase = createClient();
-
   // After mount, restore saved session (avoids hydration mismatch)
   useEffect(() => {
     try {
@@ -90,6 +87,7 @@ export default function PhotoBooth() {
             careerStyle,
             isEdit: false,
             referenceImages,
+            userInfo: state.userInfo,
           }),
         });
 
@@ -98,38 +96,6 @@ export default function PhotoBooth() {
 
         // Use public URL from server-side upload, or fall back to base64
         const publicUrl: string = data.publicUrl || data.transformedImage;
-
-        // Save to DB
-        if (state.userInfo) {
-          await supabase.from('user_transformations').insert({
-            name: state.userInfo.name,
-            organization: state.userInfo.organization,
-            email: state.userInfo.email,
-            mobile_number: state.userInfo.mobile,
-            selected_theme: themeTitle,
-            theme_type: themeType,
-            career_style: themeType === 'career' ? careerStyle : null,
-            transformed_photo_url: publicUrl,
-            original_photo_url: state.capturedPhoto.substring(0, 100),
-          });
-
-          // Save to Google Sheets
-          await fetch('/api/save-to-google-sheets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: state.userInfo.name,
-              organization: state.userInfo.organization,
-              email: state.userInfo.email,
-              mobile: state.userInfo.mobile,
-              theme: themeTitle,
-              themeType,
-              careerStyle: themeType === 'career' ? careerStyle : null,
-              imageUrl: publicUrl || '',
-              timestamp: new Date().toISOString(),
-            }),
-          });
-        }
 
         go('result', { transformedImageUrl: publicUrl });
       } catch (err: unknown) {
