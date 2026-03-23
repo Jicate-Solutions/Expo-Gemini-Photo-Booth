@@ -19,6 +19,7 @@ const initialState: AppState = {
   careerStyle: 'photorealistic',
   customPrompt: '',
   transformedImageUrl: null,
+  uploadDebug: '',
   userInfo: null,
   errorMessage: '',
   referenceImages: [],
@@ -97,13 +98,20 @@ export default function PhotoBooth() {
         // Upload image via server-side API route
         const base64 = data.transformedImage.split(',')[1];
         const mimeType = data.transformedImage.split(';')[0].split(':')[1] || 'image/jpeg';
-        const uploadRes = await fetch('/api/upload-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base64, mimeType }),
-        });
-        const uploadData = await uploadRes.json();
-        const photoPublicUrl: string = uploadData.publicUrl || '';
+        let photoPublicUrl = '';
+        let uploadDebug = '';
+        try {
+          const uploadRes = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ base64, mimeType }),
+          });
+          const uploadData = await uploadRes.json();
+          photoPublicUrl = uploadData.publicUrl || '';
+          uploadDebug = uploadData.publicUrl ? `OK: ${uploadData.publicUrl}` : `FAIL: ${JSON.stringify(uploadData)}`;
+        } catch (e) {
+          uploadDebug = `EXCEPTION: ${e}`;
+        }
 
         const publicUrl: string = photoPublicUrl || data.transformedImage;
 
@@ -126,7 +134,7 @@ export default function PhotoBooth() {
           }).catch(e => console.error('Save user failed:', e));
         }
 
-        go('result', { transformedImageUrl: publicUrl });
+        go('result', { transformedImageUrl: publicUrl, uploadDebug });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
         go('error', { errorMessage: message });
@@ -226,6 +234,7 @@ export default function PhotoBooth() {
           transformedImageUrl={state.transformedImageUrl!}
           selectedTheme={state.selectedTheme}
           userMobile={state.userInfo?.mobile || ''}
+          uploadDebug={state.uploadDebug}
           onTryAnotherTheme={() => go('themeSelection')}
           onStartOver={clearSession}
           onEdit={handleEdit}
