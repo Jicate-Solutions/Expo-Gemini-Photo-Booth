@@ -84,7 +84,7 @@ export default function StickerSheetPage() {
         {/* Grid preview on screen */}
         <div className="px-6 py-8">
           <div className="max-w-2xl mx-auto">
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               {slots.map((sticker, i) => (
                 <div key={i} className="flex flex-col items-center gap-2">
                   <div className="relative w-32 h-32">
@@ -148,13 +148,13 @@ export default function StickerSheetPage() {
           }
           .sticker-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 8mm;
             width: 100%;
           }
           .sticker-circle {
-            width: 42mm;
-            height: 42mm;
+            width: 58mm;
+            height: 58mm;
             border-radius: 50%;
             overflow: hidden;
             border: 0.5mm dashed #ccc;
