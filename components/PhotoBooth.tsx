@@ -96,23 +96,8 @@ export default function PhotoBooth() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Transformation failed');
 
-        // Upload to Supabase Storage
-        const base64 = data.transformedImage.split(',')[1];
-        const byteChars = atob(base64);
-        const byteArray = new Uint8Array(byteChars.length);
-        for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
-        const blob = new Blob([byteArray], { type: 'image/jpeg' });
-
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('transformations')
-          .upload(fileName, blob, { contentType: 'image/jpeg', upsert: false });
-
-        let publicUrl = data.transformedImage; // fallback to base64
-        if (!uploadError && uploadData) {
-          const { data: urlData } = supabase.storage.from('transformations').getPublicUrl(uploadData.path);
-          publicUrl = urlData.publicUrl;
-        }
+        // Use public URL from server-side upload, or fall back to base64
+        const publicUrl: string = data.publicUrl || data.transformedImage;
 
         // Save to DB
         if (state.userInfo) {

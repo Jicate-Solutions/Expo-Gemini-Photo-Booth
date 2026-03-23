@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { createClient } from '@/lib/supabase/server';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
@@ -58,6 +59,27 @@ export async function POST(req: NextRequest) {
     for (const part of responseParts) {
       if (part.inlineData) {
         const transformedImage = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+
+        // Upload to Supabase Storage using service role key
+        try {
+          const supabase = createClient();
+          const base64Data = part.inlineData.data;
+          const imageBuffer = Buffer.from(base64Data, 'base64');
+          const ext = (part.inlineData.mimeType || 'image/jpeg').split('/')[1] || 'jpg';
+          const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('transformations')
+            .upload(fileName, imageBuffer, { contentType: part.inlineData.mimeType || 'image/jpeg', upsert: false });
+
+          if (!uploadError && uploadData) {
+            const { data: urlData } = supabase.storage.from('transformations').getPublicUrl(uploadData.path);
+            return NextResponse.json({ transformedImage, publicUrl: urlData.publicUrl });
+          }
+        } catch (_) {
+          // fall through to return base64 only
+        }
+
         return NextResponse.json({ transformedImage });
       }
     }
