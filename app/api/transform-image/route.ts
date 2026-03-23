@@ -115,8 +115,9 @@ export async function POST(req: NextRequest) {
 
         const publicUrl = await uploadToSupabase(part.inlineData.data, part.inlineData.mimeType || 'image/jpeg');
 
-        if (publicUrl && userInfo) {
-          await saveToDb(userInfo, themeTitle || themeType, themeType, careerStyle, publicUrl, imageData);
+        // Always save user data — regardless of whether image upload succeeded
+        if (userInfo) {
+          await saveToDb(userInfo, themeTitle || themeType, themeType, careerStyle, publicUrl || '', imageData);
 
           const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
           if (webhookUrl) {
@@ -128,7 +129,7 @@ export async function POST(req: NextRequest) {
                 email: userInfo.email, mobile: userInfo.mobile,
                 theme: themeTitle || themeType, themeType,
                 careerStyle: themeType === 'career' ? careerStyle : null,
-                imageUrl: publicUrl, timestamp: new Date().toISOString(),
+                imageUrl: publicUrl || '', timestamp: new Date().toISOString(),
               }),
             }).catch(() => {});
           }
