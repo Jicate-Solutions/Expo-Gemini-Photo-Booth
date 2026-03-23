@@ -72,6 +72,11 @@ export async function POST(req: NextRequest) {
             .from('transformations')
             .upload(fileName, imageBuffer, { contentType: part.inlineData.mimeType || 'image/jpeg', upsert: false });
 
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError.message, uploadError);
+            return NextResponse.json({ transformedImage, uploadError: uploadError.message });
+          }
+
           if (!uploadError && uploadData) {
             const { data: urlData } = supabase.storage.from('transformations').getPublicUrl(uploadData.path);
             const publicUrl = urlData.publicUrl;
@@ -113,8 +118,10 @@ export async function POST(req: NextRequest) {
 
             return NextResponse.json({ transformedImage, publicUrl });
           }
-        } catch (_) {
-          // fall through to return base64 only
+        } catch (storageErr: unknown) {
+          const msg = storageErr instanceof Error ? storageErr.message : String(storageErr);
+          console.error('Storage exception:', msg);
+          return NextResponse.json({ transformedImage, uploadError: msg });
         }
 
         return NextResponse.json({ transformedImage });
