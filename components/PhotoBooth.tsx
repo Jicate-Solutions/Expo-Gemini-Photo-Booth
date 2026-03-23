@@ -215,6 +215,7 @@ export default function PhotoBooth() {
         <ResultScreen
           transformedImageUrl={state.transformedImageUrl!}
           selectedTheme={state.selectedTheme}
+          userMobile={state.userInfo?.mobile || ''}
           onTryAnotherTheme={() => go('themeSelection')}
           onStartOver={clearSession}
           onEdit={handleEdit}
