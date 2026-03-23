@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { AppState, AppScreen, Theme, CareerStyle, UserInfo } from '@/types';
 import LandingScreen from './booth/LandingScreen';
 import CameraScreen from './booth/CameraScreen';
@@ -95,10 +94,11 @@ export default function PhotoBooth() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Transformation failed');
 
-        // Upload generated image to Supabase from client (anon key has upload permission)
+        // Upload generated image to Supabase using direct fetch (confirmed working)
         let photoPublicUrl = '';
         try {
-          const supabase = createClient();
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+          const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
           const base64 = data.transformedImage.split(',')[1];
           const mimeType = data.transformedImage.split(';')[0].split(':')[1] || 'image/jpeg';
           const ext = mimeType.split('/')[1] || 'jpg';
@@ -107,14 +107,19 @@ export default function PhotoBooth() {
           for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
           const blob = new Blob([byteArray], { type: mimeType });
           const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('transformations')
-            .upload(fileName, blob, { contentType: mimeType, upsert: false });
-          if (!uploadError && uploadData) {
-            const { data: urlData } = supabase.storage.from('transformations').getPublicUrl(uploadData.path);
-            photoPublicUrl = urlData.publicUrl;
-          } else if (uploadError) {
-            console.error('Upload error:', uploadError.message);
+          const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/transformations/${fileName}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${anonKey}`,
+              'Content-Type': mimeType,
+            },
+            body: blob,
+          });
+          if (uploadRes.ok) {
+            photoPublicUrl = `${supabaseUrl}/storage/v1/object/public/transformations/${fileName}`;
+          } else {
+            const err = await uploadRes.text();
+            console.error('Upload failed:', uploadRes.status, err);
           }
         } catch (e) {
           console.error('Upload exception:', e);
