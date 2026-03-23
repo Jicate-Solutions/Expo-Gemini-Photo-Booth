@@ -33,8 +33,8 @@ export default function ResultScreen({
 
   // Clean phone number and build WhatsApp URL
   const cleanPhone = userMobile.replace(/\D/g, '');
-  // Auto-add India country code (91) if 10-digit number entered
-  const whatsappPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+  // Always use 91 (India) as default — skip if number already starts with 91
+  const whatsappPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
   // Include image URL in message if it's a public URL (not base64)
   const isPublicUrl = transformedImageUrl && !transformedImageUrl.startsWith('data:');
   const whatsappMessage = isPublicUrl
