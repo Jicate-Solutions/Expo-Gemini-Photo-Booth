@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle, Layers } from 'lucide-react';
+import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -68,8 +68,21 @@ export default function ResultScreen({
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 text-white flex flex-col overflow-hidden">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+    <div className="h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 text-white flex flex-col overflow-hidden print:bg-white print:block">
+      <style>{`
+        @media print {
+          @page { size: A4 portrait; margin: 0; }
+          body { margin: 0; padding: 0; }
+          .print\\:hidden { display: none !important; }
+          .result-image {
+            width: 210mm;
+            height: 297mm;
+            object-fit: cover;
+            display: block;
+          }
+        }
+      `}</style>
+      <header className="print:hidden flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div>
           <h1 className="font-bold text-lg">✨ Your Transformation</h1>
           {selectedTheme && <p className="text-gray-400 text-xs">{selectedTheme.title}</p>}
@@ -82,11 +95,11 @@ export default function ResultScreen({
       <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
         {/* Image */}
         <div className="flex-1 overflow-hidden">
-          <img src={transformedImageUrl} alt="Transformed" className="w-full h-full object-cover" />
+          <img src={transformedImageUrl} alt="Transformed" className="result-image w-full h-full object-cover" />
         </div>
 
         {/* Actions */}
-        <div className="lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col gap-4">
+        <div className="print:hidden lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col gap-4">
 
           {/* WhatsApp QR Button */}
           {cleanPhone && (
@@ -143,15 +156,15 @@ export default function ResultScreen({
             <RefreshCw className="w-5 h-5" /> Try Another Theme
           </Button>
 
-          <a href="/sticker-sheet" target="_blank" rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white text-sm font-semibold px-4 py-3 rounded-xl transition-colors">
-            <Layers className="w-4 h-4" /> View Sticker Sheet
-          </a>
+          <Button onClick={() => window.print()} className="w-full bg-gray-700 hover:bg-gray-600 text-white gap-2 py-5 text-base font-semibold">
+            <Printer className="w-5 h-5" /> Print
+          </Button>
 
         </div>
       </div>
 
-      {/* WhatsApp QR Dialog */}
+      {/* WhatsApp QR Dialog — hidden on print */}
+
       <Dialog open={showWhatsApp} onOpenChange={setShowWhatsApp}>
         <DialogContent className="bg-gray-900 border-green-500/30 text-white text-center max-w-sm">
           <div className="flex items-center justify-center gap-2 mb-1">
