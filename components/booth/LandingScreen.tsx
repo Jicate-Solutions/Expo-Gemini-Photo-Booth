@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { Camera, Sparkles, Wand2, Briefcase, Star, Lock } from 'lucide-react';
+import { Camera, Sparkles, Wand2, Briefcase, Star, Lock, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { funThemes } from '@/lib/themes';
 import { careerThemes } from '@/lib/career-themes';
@@ -9,9 +9,10 @@ import { careerThemes } from '@/lib/career-themes';
 interface LandingScreenProps {
   onOpenCamera: () => void;
   onPhotoUpload: (photo: string) => void;
+  onLogout: () => void;
 }
 
-export default function LandingScreen({ onOpenCamera, onPhotoUpload }: LandingScreenProps) {
+export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout }: LandingScreenProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,9 +76,18 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload }: LandingSc
           <Wand2 className="w-5 h-5 text-purple-400" />
           <span className="font-bold text-base text-purple-300">Gemini Magic Booth</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-          <span>150+ Themes · AI-Powered</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <span className="hidden sm:inline">150+ Themes · AI-Powered</span>
+          </div>
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Logout</span>
+          </button>
         </div>
       </header>
 

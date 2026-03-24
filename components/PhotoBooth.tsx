@@ -230,6 +230,10 @@ export default function PhotoBooth() {
         <LandingScreen
           onOpenCamera={() => go('camera')}
           onPhotoUpload={handlePhotoReady}
+          onLogout={() => {
+            sessionStorage.removeItem('booth_logged_in');
+            setBoothLoggedIn(false);
+          }}
         />
       );
 
