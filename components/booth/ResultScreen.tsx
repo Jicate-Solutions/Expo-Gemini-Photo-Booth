@@ -70,9 +70,9 @@ export default function ResultScreen({
 
     doc.open();
     doc.write(`<!DOCTYPE html><html><head><style>
-      @page { size: ${FRAME_WIDTH} ${FRAME_HEIGHT} portrait; margin: 0; }
+      @page { size: auto; margin: 0; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; }
+      html, body { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; background: white; }
       img { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; object-fit: cover; display: block; }
     </style></head><body>
       <img src="${transformedImageUrl}" />
