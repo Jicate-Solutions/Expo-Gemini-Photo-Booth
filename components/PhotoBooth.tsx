@@ -138,9 +138,8 @@ export default function PhotoBooth() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               name: state.userInfo.name,
-              organization: state.userInfo.organization,
-              email: state.userInfo.email,
               mobile: state.userInfo.mobile,
+              group: state.userInfo.group,
               theme: themeTitle,
               themeType,
               careerStyle,

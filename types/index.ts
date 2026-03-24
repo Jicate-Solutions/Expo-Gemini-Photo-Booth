@@ -22,9 +22,8 @@ export interface Theme {
 
 export interface UserInfo {
   name: string;
-  organization: string;
-  email: string;
   mobile: string;
+  group: string;
 }
 
 export interface AppState {

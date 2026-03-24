@@ -13,15 +13,14 @@ interface UserInfoScreenProps {
 }
 
 export default function UserInfoScreen({ capturedPhoto, onNext, onBack }: UserInfoScreenProps) {
-  const [form, setForm] = useState<UserInfo>({ name: '', organization: '', email: '', mobile: '' });
+  const [form, setForm] = useState<UserInfo>({ name: '', mobile: '', group: '' });
   const [errors, setErrors] = useState<Partial<UserInfo>>({});
 
   const validate = () => {
     const e: Partial<UserInfo> = {};
     if (!form.name.trim()) e.name = 'Name is required';
-    if (!form.email.trim()) e.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email';
-    if (!form.mobile.trim()) e.mobile = 'Mobile number is required';
+    if (!form.mobile.trim()) e.mobile = 'WhatsApp number is required';
+    if (!form.group.trim()) e.group = 'Group is required';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -57,7 +56,7 @@ export default function UserInfoScreen({ capturedPhoto, onNext, onBack }: UserIn
             </div>
             <div>
               <h2 className="font-bold text-xl">Tell us about yourself</h2>
-              <p className="text-gray-400 text-sm">We need a few details before your transformation</p>
+              <p className="text-gray-400 text-sm">A few details before your transformation</p>
             </div>
           </div>
 
@@ -76,33 +75,7 @@ export default function UserInfoScreen({ capturedPhoto, onNext, onBack }: UserIn
             </div>
 
             <div>
-              <label className="text-sm text-gray-300 mb-1 block">Organization / Company</label>
-              <Input
-                placeholder="Your company or institution (optional)"
-                value={form.organization}
-                onChange={(e) => setForm({ ...form, organization: e.target.value })}
-                className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                autoComplete="off"
-                name="booth-org"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-300 mb-1 block">Email Address *</label>
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                autoComplete="off"
-                name="booth-email"
-              />
-              {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-300 mb-1 block">Mobile Number *</label>
+              <label className="text-sm text-gray-300 mb-1 block">WhatsApp Number *</label>
               <Input
                 type="tel"
                 placeholder="+91 90000 00000"
@@ -113,6 +86,19 @@ export default function UserInfoScreen({ capturedPhoto, onNext, onBack }: UserIn
                 name="booth-mobile"
               />
               {errors.mobile && <p className="text-red-400 text-xs mt-1">{errors.mobile}</p>}
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-300 mb-1 block">Group *</label>
+              <Input
+                placeholder="Enter your group"
+                value={form.group}
+                onChange={(e) => setForm({ ...form, group: e.target.value })}
+                className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                autoComplete="off"
+                name="booth-group"
+              />
+              {errors.group && <p className="text-red-400 text-xs mt-1">{errors.group}</p>}
             </div>
 
             <Button

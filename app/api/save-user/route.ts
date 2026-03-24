@@ -5,7 +5,7 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, organization, email, mobile, theme, themeType, careerStyle, photoUrl, originalPhoto } = await req.json();
+    const { name, mobile, group, theme, themeType, careerStyle, photoUrl, originalPhoto } = await req.json();
 
     const res = await fetch(`${SUPABASE_URL}/rest/v1/user_transformations`, {
       method: 'POST',
@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         name,
-        organization: organization || '',
-        email,
+        organization: group || '',
+        email: '',
         mobile_number: mobile,
         selected_theme: theme,
         theme_type: themeType,
