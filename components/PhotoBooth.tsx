@@ -95,7 +95,7 @@ export default function PhotoBooth() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Transformation failed');
 
-        // Upload image via server-side API route
+        // Upload image and save user data via dedicated API routes
         const base64 = data.transformedImage.split(',')[1];
         const mimeType = data.transformedImage.split(';')[0].split(':')[1] || 'image/jpeg';
         let photoPublicUrl = '';
@@ -129,9 +129,7 @@ export default function PhotoBooth() {
           console.error('Upload failed:', e);
         }
 
-        const publicUrl: string = photoPublicUrl || data.transformedImage;
-
-        // Save user data via dedicated API route
+        // Save user data once — only here, not in transform-image route
         if (state.userInfo) {
           fetch('/api/save-user', {
             method: 'POST',
@@ -149,6 +147,7 @@ export default function PhotoBooth() {
           }).catch(e => console.error('Save user failed:', e));
         }
 
+        const publicUrl: string = photoPublicUrl || data.transformedImage;
         go('result', { transformedImageUrl: publicUrl });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
