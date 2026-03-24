@@ -1,23 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const ADMIN_ACCOUNTS: Record<string, string> = {
-  'admin@jicate.com':    'Jicate@Admin1',
-  'maha@jicate.com':     'Jicate@Maha2',
-  'manager@jicate.com':  'Jicate@Mgr3',
-  'director@jicate.com': 'Jicate@Dir4',
-  'booth@jicate.com':    'Jicate@Booth5',
-};
-
-function isValidAdmin(email: string, password: string): boolean {
-  return ADMIN_ACCOUNTS[email?.toLowerCase().trim()] === password;
-}
-
 export async function POST(req: NextRequest) {
-  const { email, password } = await req.json();
+  const { password } = await req.json();
 
-  if (!isValidAdmin(email, password)) {
-    return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+  if (password !== 'Maha@2026') {
+    return NextResponse.json({ error: 'Wrong password' }, { status: 401 });
   }
 
   const supabase = createClient(
@@ -41,9 +29,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const { email, password, mobile } = await req.json();
+  const { password, mobile } = await req.json();
 
-  if (!isValidAdmin(email, password)) {
+  if (password !== 'Maha@2026') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

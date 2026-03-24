@@ -10,6 +10,7 @@ import ThemeSelectionScreen from './booth/ThemeSelectionScreen';
 import LoadingScreen from './booth/LoadingScreen';
 import ResultScreen from './booth/ResultScreen';
 import ErrorScreen from './booth/ErrorScreen';
+import BoothLoginScreen from './booth/BoothLoginScreen';
 
 const STORAGE_KEY = 'booth_session';
 
@@ -26,7 +27,15 @@ const initialState: AppState = {
 };
 
 export default function PhotoBooth() {
+  const [boothLoggedIn, setBoothLoggedIn] = useState(false);
   const [state, setState] = useState<AppState>(initialState);
+
+  // Check booth login session on mount
+  useEffect(() => {
+    const loggedIn = sessionStorage.getItem('booth_logged_in');
+    if (loggedIn === 'true') setBoothLoggedIn(true);
+  }, []);
+
   // After mount, restore saved session (avoids hydration mismatch)
   useEffect(() => {
     try {
@@ -203,6 +212,17 @@ export default function PhotoBooth() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [state.transformedImageUrl]
   );
+
+  if (!boothLoggedIn) {
+    return (
+      <BoothLoginScreen
+        onLogin={() => {
+          sessionStorage.setItem('booth_logged_in', 'true');
+          setBoothLoggedIn(true);
+        }}
+      />
+    );
+  }
 
   switch (state.screen) {
     case 'landing':
