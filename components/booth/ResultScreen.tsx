@@ -56,85 +56,42 @@ export default function ResultScreen({
   };
 
   const handlePrint = () => {
-    // ── FRAME SIZE — update width/height when exact dimensions are provided ──
-    const FRAME_WIDTH  = '100mm';   // ← update this
-    const FRAME_HEIGHT = '150mm';   // ← update this
+    // ── FRAME SIZE — update these two values when exact dimensions are given ──
+    const FRAME_WIDTH  = '100mm';  // ← update this
+    const FRAME_HEIGHT = '150mm';  // ← update this
 
-    // Open centered on screen
-    const winW = 520, winH = 720;
-    const left = Math.round((window.screen.width - winW) / 2);
-    const top  = Math.round((window.screen.height - winH) / 2);
-    const printWindow = window.open('', '_blank', `width=${winW},height=${winH},left=${left},top=${top},toolbar=0,menubar=0,scrollbars=0`);
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Gemini Magic Booth — Print</title>
-          <style>
-            @page { size: ${FRAME_WIDTH} ${FRAME_HEIGHT} portrait; margin: 0; }
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-              background: #0a0a0f;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              min-height: 100vh;
-              font-family: -apple-system, sans-serif;
-              color: white;
-            }
-            .title {
-              font-size: 13px;
-              color: #a78bfa;
-              font-weight: 700;
-              letter-spacing: 2px;
-              text-transform: uppercase;
-              margin-bottom: 16px;
-            }
-            .frame {
-              border: 2px solid rgba(139,92,246,0.4);
-              border-radius: 12px;
-              overflow: hidden;
-              box-shadow: 0 0 40px rgba(139,92,246,0.3), 0 20px 60px rgba(0,0,0,0.6);
-            }
-            img {
-              width: ${FRAME_WIDTH};
-              height: ${FRAME_HEIGHT};
-              object-fit: cover;
-              display: block;
-            }
-            .btn {
-              margin-top: 20px;
-              background: linear-gradient(135deg, #7c3aed, #db2777);
-              color: white;
-              border: none;
-              padding: 12px 40px;
-              border-radius: 10px;
-              font-size: 15px;
-              font-weight: 700;
-              cursor: pointer;
-              letter-spacing: 1px;
-            }
-            .btn:hover { opacity: 0.9; }
-            @media print {
-              body { background: white; }
-              .title, .btn { display: none; }
-              .frame { border: none; border-radius: 0; box-shadow: none; }
-              img { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="title">✦ Your Transformation</div>
-          <div class="frame">
-            <img src="${transformedImageUrl}" />
-          </div>
-          <button class="btn" onclick="window.print()">🖨️ Print Now</button>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    // Use a hidden iframe — triggers ONE print dialog, no extra popup window
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><style>
+      @page { size: ${FRAME_WIDTH} ${FRAME_HEIGHT} portrait; margin: 0; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; }
+      img { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; object-fit: cover; display: block; }
+    </style></head><body>
+      <img src="${transformedImageUrl}" />
+    </body></html>`);
+    doc.close();
+
+    const img = doc.querySelector('img');
+    const doPrint = () => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 2000);
+    };
+    if (img) {
+      img.onload = doPrint;
+      img.onerror = doPrint;
+      if (img.complete) doPrint();
+    } else {
+      setTimeout(doPrint, 500);
+    }
   };
 
   const handleEditRefImage = (e: React.ChangeEvent<HTMLInputElement>) => {
