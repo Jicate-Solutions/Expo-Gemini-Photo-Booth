@@ -23,8 +23,8 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Row[]>([]);
-  const [deletingEmail, setDeletingEmail] = useState<string | null>(null);
-  const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
+  const [deletingMobile, setDeletingMobile] = useState<string | null>(null);
+  const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   // Auto-login on page load if session exists
@@ -81,13 +81,12 @@ export default function AdminPage() {
   };
 
   const downloadCSV = () => {
-    const headers = ['#', 'Date & Time', 'Name', 'Organization', 'Email', 'WhatsApp', 'Theme', 'Type', 'Career Style', 'Photo URL'];
+    const headers = ['#', 'Date & Time', 'Name', 'Group', 'WhatsApp', 'Theme', 'Type', 'Career Style', 'Photo URL'];
     const rows = data.map((r, i) => [
       i + 1,
       new Date(r.created_at).toLocaleString('en-IN'),
       r.name,
       r.organization || '',
-      r.email,
       r.mobile_number,
       r.selected_theme,
       r.theme_type,
@@ -104,28 +103,29 @@ export default function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleDelete = async (email: string) => {
-    if (!confirm(`Delete all records for ${email}?`)) return;
-    setDeletingEmail(email);
+  const handleDelete = async (mobile: string) => {
+    if (!confirm(`Delete all records for this number?`)) return;
+    setDeletingMobile(mobile);
     try {
       const res = await fetch('/api/admin', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, email }),
+        body: JSON.stringify({ password, mobile }),
       });
-      if (res.ok) setData(prev => prev.filter(r => r.email !== email));
+      if (res.ok) setData(prev => prev.filter(r => r.mobile_number !== mobile));
     } finally {
-      setDeletingEmail(null);
+      setDeletingMobile(null);
     }
   };
 
-  // Group rows by email — one card per unique visitor
+  // Group rows by mobile_number — one card per unique visitor
   const visitorMap = new Map<string, Row & { photoCount: number; photos: { url: string; theme: string; theme_type: string; created_at: string }[] }>();
   for (const row of data) {
-    if (!visitorMap.has(row.email)) {
-      visitorMap.set(row.email, { ...row, photoCount: 0, photos: [] });
+    const key = row.mobile_number || row.id;
+    if (!visitorMap.has(key)) {
+      visitorMap.set(key, { ...row, photoCount: 0, photos: [] });
     }
-    const v = visitorMap.get(row.email)!;
+    const v = visitorMap.get(key)!;
     v.photoCount += 1;
     if (row.transformed_photo_url && !row.transformed_photo_url.startsWith('data:')) {
       v.photos.push({ url: row.transformed_photo_url, theme: row.selected_theme, theme_type: row.theme_type, created_at: row.created_at });
@@ -264,8 +264,7 @@ export default function AdminPage() {
                     <th className="text-left px-4 py-3 text-gray-400 font-semibold">#</th>
                     <th className="text-left px-4 py-3 text-gray-400 font-semibold">Date & Time</th>
                     <th className="text-left px-4 py-3 text-gray-400 font-semibold">Name</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">Organization</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">Email</th>
+                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">Group</th>
                     <th className="text-left px-4 py-3 text-gray-400 font-semibold">WhatsApp</th>
                     <th className="text-left px-4 py-3 text-gray-400 font-semibold">Theme</th>
                     <th className="text-left px-4 py-3 text-gray-400 font-semibold">Photos</th>
@@ -286,7 +285,6 @@ export default function AdminPage() {
                           </td>
                           <td className="px-4 py-3 text-white font-medium">{row.name}</td>
                           <td className="px-4 py-3 text-gray-400">{row.organization || '—'}</td>
-                          <td className="px-4 py-3 text-gray-300">{row.email}</td>
                           <td className="px-4 py-3">
                             {waPhone ? (
                               <a href={`https://wa.me/${waPhone}`} target="_blank" rel="noopener noreferrer"
@@ -308,10 +306,10 @@ export default function AdminPage() {
                           <td className="px-4 py-3 text-center">
                             {row.photoCount > 1 ? (
                               <button
-                                onClick={() => setExpandedEmail(expandedEmail === row.email ? null : row.email)}
+                                onClick={() => setExpandedMobile(expandedMobile === row.mobile_number ? null : row.mobile_number)}
                                 className="inline-flex items-center gap-1 bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 text-xs font-bold px-2 py-0.5 rounded-full transition-colors">
                                 {row.photoCount}
-                                {expandedEmail === row.email ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                {expandedMobile === row.mobile_number ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                               </button>
                             ) : (
                               <span className="text-gray-500 text-xs">1</span>
@@ -328,15 +326,15 @@ export default function AdminPage() {
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            <button onClick={() => handleDelete(row.email)} disabled={deletingEmail === row.email}
+                            <button onClick={() => handleDelete(row.mobile_number)} disabled={deletingMobile === row.mobile_number}
                               className="text-gray-600 hover:text-red-400 transition-colors disabled:opacity-40" title="Delete visitor">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </td>
                         </tr>
-                        {expandedEmail === row.email && row.photos.length > 1 && (
+                        {expandedMobile === row.mobile_number && row.photos.length > 1 && (
                           <tr key={`${row.id}-expanded`} className="bg-white/3 border-b border-white/5">
-                            <td colSpan={10} className="px-6 py-4">
+                            <td colSpan={9} className="px-6 py-4">
                               <p className="text-gray-500 text-xs mb-3">All photos for {row.name}</p>
                               <div className="flex flex-wrap gap-3">
                                 {row.photos.map((photo, idx) => (

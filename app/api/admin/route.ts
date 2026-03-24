@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const { password, email } = await req.json();
+  const { password, mobile } = await req.json();
 
   if (password !== 'Maha@2026') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -46,7 +46,7 @@ export async function DELETE(req: NextRequest) {
   const { error } = await supabase
     .from('user_transformations')
     .delete()
-    .eq('email', email);
+    .eq('mobile_number', mobile);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
