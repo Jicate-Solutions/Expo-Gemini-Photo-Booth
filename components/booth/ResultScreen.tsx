@@ -3,9 +3,7 @@
 import { useState, useRef } from 'react';
 import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { QRCodeSVG } from 'qrcode.react';
 import { Theme } from '@/types';
 
 interface ResultScreenProps {
@@ -28,7 +26,6 @@ export default function ResultScreen({
   const [editPrompt, setEditPrompt] = useState('');
   const [editRefs, setEditRefs] = useState<string[]>([]);
   const [showEdit, setShowEdit] = useState(false);
-  const [showWhatsApp, setShowWhatsApp] = useState(false);
   const editFileRef = useRef<HTMLInputElement>(null);
 
   // Clean phone number and build WhatsApp URL
@@ -103,7 +100,7 @@ export default function ResultScreen({
 
           {/* WhatsApp QR Button */}
           {cleanPhone && (
-            <Button onClick={() => setShowWhatsApp(true)} className="w-full bg-green-600 hover:bg-green-500 text-white gap-2 py-5 text-base font-semibold">
+            <Button onClick={() => window.open(whatsappUrl, '_blank')} className="w-full bg-green-600 hover:bg-green-500 text-white gap-2 py-5 text-base font-semibold">
               <MessageCircle className="w-5 h-5" /> Send via WhatsApp
             </Button>
           )}
@@ -163,26 +160,6 @@ export default function ResultScreen({
         </div>
       </div>
 
-      {/* WhatsApp QR Dialog — hidden on print */}
-
-      <Dialog open={showWhatsApp} onOpenChange={setShowWhatsApp}>
-        <DialogContent className="bg-gray-900 border-green-500/30 text-white text-center max-w-sm">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <MessageCircle className="w-5 h-5 text-green-400" />
-            <h2 className="font-bold text-lg">Send via WhatsApp</h2>
-          </div>
-          <p className="text-gray-400 text-sm mb-4">Scan this QR with your phone to open WhatsApp chat with <span className="text-white font-medium">+{whatsappPhone}</span></p>
-          <div className="flex justify-center mb-4">
-            <div className="bg-white p-4 rounded-xl">
-              <QRCodeSVG value={whatsappUrl} size={200} />
-            </div>
-          </div>
-          <p className="text-gray-500 text-xs mb-4">Scan to open → share their photo on WhatsApp</p>
-          <Button onClick={() => setShowWhatsApp(false)} variant="outline" className="border-white/20 w-full">
-            Close
-          </Button>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
