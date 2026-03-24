@@ -17,6 +17,7 @@ interface Row {
 }
 
 export default function AdminPage() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -29,13 +30,16 @@ export default function AdminPage() {
 
   // Auto-login on page load if session exists
   useEffect(() => {
-    const saved = sessionStorage.getItem('admin_pwd');
-    if (saved) {
-      setPassword(saved);
-      fetchData(saved).then(rows => {
+    const savedEmail = sessionStorage.getItem('admin_email');
+    const savedPwd = sessionStorage.getItem('admin_pwd');
+    if (savedEmail && savedPwd) {
+      setEmail(savedEmail);
+      setPassword(savedPwd);
+      fetchData(savedEmail, savedPwd).then(rows => {
         setData(rows);
         setLoggedIn(true);
       }).catch(() => {
+        sessionStorage.removeItem('admin_email');
         sessionStorage.removeItem('admin_pwd');
       }).finally(() => setLoading(false));
     } else {
@@ -43,11 +47,11 @@ export default function AdminPage() {
     }
   }, []);
 
-  const fetchData = async (pwd: string) => {
+  const fetchData = async (em: string, pwd: string) => {
     const res = await fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pwd }),
+      body: JSON.stringify({ email: em, password: pwd }),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Failed');
@@ -59,12 +63,13 @@ export default function AdminPage() {
     setLoading(true);
     setError('');
     try {
-      const rows = await fetchData(password);
+      const rows = await fetchData(email, password);
+      sessionStorage.setItem('admin_email', email);
       sessionStorage.setItem('admin_pwd', password);
       setData(rows);
       setLoggedIn(true);
     } catch {
-      setError('Wrong password or server error. Try again.');
+      setError('Invalid email or password. Try again.');
     } finally {
       setLoading(false);
     }
@@ -73,7 +78,7 @@ export default function AdminPage() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const rows = await fetchData(password);
+      const rows = await fetchData(email, password);
       setData(rows);
     } finally {
       setRefreshing(false);
@@ -110,7 +115,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, mobile }),
+        body: JSON.stringify({ email, password, mobile }),
       });
       if (res.ok) setData(prev => prev.filter(r => r.mobile_number !== mobile));
     } finally {
@@ -157,6 +162,14 @@ export default function AdminPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 outline-none focus:border-purple-500/50"
+              autoComplete="off"
+            />
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -172,7 +185,7 @@ export default function AdminPage() {
               </button>
             </div>
             {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-            <button type="submit" disabled={loading || !password}
+            <button type="submit" disabled={loading || !email || !password}
               className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-semibold py-3 rounded-xl transition-colors">
               {loading ? 'Checking...' : 'Login'}
             </button>
@@ -201,7 +214,7 @@ export default function AdminPage() {
             className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
             <Download className="w-4 h-4" /> Download CSV
           </button>
-          <button onClick={() => { sessionStorage.removeItem('admin_pwd'); setLoggedIn(false); setPassword(''); setData([]); }}
+          <button onClick={() => { sessionStorage.removeItem('admin_email'); sessionStorage.removeItem('admin_pwd'); setLoggedIn(false); setEmail(''); setPassword(''); setData([]); }}
             className="flex items-center gap-2 text-gray-400 hover:text-white text-sm px-3 py-2 rounded-xl hover:bg-white/5 transition-colors">
             <LogOut className="w-4 h-4" /> Logout
           </button>
