@@ -74,14 +74,14 @@ export default function CameraScreen({ onCapture, onBack }: CameraScreenProps) {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
       {/* Header */}
-      <header className="flex items-center gap-4 px-6 py-4 border-b border-white/10">
+      <header className="flex items-center gap-4 px-4 md:px-6 py-3 md:py-4 border-b border-white/10">
         <Button variant="ghost" size="icon" onClick={() => { stopCamera(); onBack(); }}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="font-semibold text-lg">Take a Photo</h1>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6">
         {error ? (
           <div className="text-center">
             <X className="w-12 h-12 text-red-400 mx-auto mb-4" />

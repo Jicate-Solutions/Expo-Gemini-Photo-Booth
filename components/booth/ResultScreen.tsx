@@ -79,7 +79,7 @@ export default function ResultScreen({
           }
         }
       `}</style>
-      <header className="print:hidden flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <header className="print:hidden flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-white/10 flex-shrink-0">
         <div>
           <h1 className="font-bold text-lg">✨ Your Transformation</h1>
           {selectedTheme && <p className="text-gray-400 text-xs">{selectedTheme.title}</p>}
@@ -91,12 +91,12 @@ export default function ResultScreen({
 
       <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
         {/* Image */}
-        <div className="flex-1 overflow-hidden">
+        <div className="h-[50vh] lg:h-auto lg:flex-1 overflow-hidden flex-shrink-0">
           <img src={transformedImageUrl} alt="Transformed" className="result-image w-full h-full object-cover" />
         </div>
 
         {/* Actions */}
-        <div className="print:hidden lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col gap-4">
+        <div className="print:hidden lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-4 lg:p-6 flex flex-col gap-3 lg:gap-4 overflow-y-auto">
 
           {/* WhatsApp QR Button */}
           {cleanPhone && (

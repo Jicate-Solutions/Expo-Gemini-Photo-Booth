@@ -70,7 +70,7 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload }: LandingSc
   return (
     <div className="min-h-screen bg-gray-950 text-white overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-black/30 backdrop-blur-sm">
+      <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-white/10 bg-black/30 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <Wand2 className="w-5 h-5 text-purple-400" />
           <span className="font-bold text-base text-purple-300">Gemini Magic Booth</span>
@@ -81,10 +81,10 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload }: LandingSc
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-49px)]">
+      <div className="flex flex-col md:flex-row md:h-[calc(100vh-49px)] overflow-y-auto md:overflow-hidden">
 
-        {/* ── LEFT: Hero ── */}
-        <div className="w-[340px] flex-shrink-0 flex flex-col items-center justify-center px-8 relative border-r border-white/5">
+        {/* ── LEFT / TOP on mobile: Hero ── */}
+        <div className="w-full md:w-[340px] md:flex-shrink-0 flex flex-col items-center justify-center px-8 py-10 md:py-0 relative md:border-r border-white/5">
           {/* Background glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-950/60 via-gray-950 to-gray-950 pointer-events-none" />
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -181,8 +181,50 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload }: LandingSc
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </div>
 
-        {/* ── RIGHT: Theme Showcase (two columns) ── */}
-        <div className="flex-1 flex overflow-hidden">
+        {/* ── Mobile only: compact theme preview strip ── */}
+        <div className="md:hidden px-4 pb-8 space-y-5">
+          {/* Career preview */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold text-sky-300 flex items-center gap-1.5">💼 Career Themes</span>
+              <span className="text-[10px] text-sky-400 bg-sky-500/15 border border-sky-500/20 px-2 py-0.5 rounded-full font-semibold">95+ ROLES</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {careerShowcase.map((theme) => (
+                <div key={theme.id} className="relative flex-shrink-0 w-20 h-28 rounded-xl overflow-hidden">
+                  <img src={theme.bgImage} alt={theme.title} className="absolute inset-0 w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                    <span className="text-sm leading-none">{theme.emoji}</span>
+                    <p className="text-white font-bold text-[8px] uppercase tracking-wide leading-tight mt-0.5 line-clamp-1">{theme.title.replace(/[^\w\s]/g, '').trim()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Fun preview */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold text-violet-300 flex items-center gap-1.5">✨ Fun &amp; Fantasy</span>
+              <span className="text-[10px] text-violet-400 bg-violet-500/15 border border-violet-500/20 px-2 py-0.5 rounded-full font-semibold">60+ THEMES</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {funShowcase.map((theme) => (
+                <div key={theme.id} className="relative flex-shrink-0 w-20 h-28 rounded-xl overflow-hidden">
+                  <img src={theme.bgImage} alt={theme.title} className="absolute inset-0 w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-1.5">
+                    <span className="text-sm leading-none">{theme.emoji}</span>
+                    <p className="text-white font-bold text-[8px] uppercase tracking-wide leading-tight mt-0.5 line-clamp-1">{theme.title.replace(/[^\w\s]/g, '').trim()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT: Theme Showcase (two columns) — desktop only ── */}
+        <div className="hidden md:flex flex-1 overflow-hidden">
 
           {/* ── CAREER THEMES ── */}
           <div className="flex-1 flex flex-col overflow-hidden relative"

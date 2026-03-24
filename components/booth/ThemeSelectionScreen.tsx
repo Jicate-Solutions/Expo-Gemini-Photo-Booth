@@ -19,6 +19,7 @@ export default function ThemeSelectionScreen({ capturedPhoto, onTransform, onBac
   const [customPrompt, setCustomPrompt] = useState('');
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [careerSearch, setCareerSearch] = useState('');
+  const [mobileTab, setMobileTab] = useState<'fun' | 'career'>('fun');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const funCategories = Array.from(new Set(funThemes.map((t) => t.category!)));
@@ -86,26 +87,58 @@ export default function ThemeSelectionScreen({ capturedPhoto, onTransform, onBac
 
   return (
     <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
-      <header className="flex items-center gap-4 px-6 py-3 border-b border-white/10 flex-shrink-0">
+      <header className="flex items-center gap-4 px-4 md:px-6 py-3 border-b border-white/10 flex-shrink-0">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div>
-          <h1 className="font-bold text-lg">Choose Your Transformation</h1>
+        <div className="min-w-0">
+          <h1 className="font-bold text-base md:text-lg">Choose Your Transformation</h1>
           <p className="text-gray-400 text-xs">150+ epic themes await</p>
         </div>
         {selectedTheme && (
-          <div className="ml-auto flex items-center gap-2 bg-purple-900/40 border border-purple-500/40 rounded-xl px-3 py-1.5">
+          <div className="ml-auto flex items-center gap-2 bg-purple-900/40 border border-purple-500/40 rounded-xl px-2 md:px-3 py-1.5 flex-shrink-0">
             <span className="text-sm">{selectedTheme.emoji}</span>
-            <span className="text-purple-300 text-sm font-medium">{selectedTheme.title}</span>
+            <span className="text-purple-300 text-xs md:text-sm font-medium truncate max-w-[80px] md:max-w-none">{selectedTheme.title}</span>
           </div>
         )}
       </header>
 
+      {/* ── Mobile: photo + transform bar ── */}
+      <div className="md:hidden flex items-center gap-3 px-4 py-2 border-b border-white/10 flex-shrink-0 bg-gray-950">
+        <div className="w-10 h-10 rounded-xl overflow-hidden border border-purple-500/40 flex-shrink-0">
+          <img src={capturedPhoto} alt="Your photo" className="w-full h-full object-cover" />
+        </div>
+        <span className="text-xs text-gray-400 flex-1">Your photo</span>
+        <Button
+          onClick={handleTransform}
+          disabled={!canTransform}
+          className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 gap-1.5 py-2 px-4 text-sm rounded-xl"
+        >
+          <Wand2 className="w-4 h-4" />
+          Transform!
+        </Button>
+      </div>
+
+      {/* ── Mobile: tab switcher ── */}
+      <div className="md:hidden flex flex-shrink-0 border-b border-white/10">
+        <button
+          onClick={() => setMobileTab('fun')}
+          className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${mobileTab === 'fun' ? 'text-violet-300 border-b-2 border-violet-400 bg-violet-500/5' : 'text-gray-500'}`}
+        >
+          ✨ Fun &amp; Fantasy
+        </button>
+        <button
+          onClick={() => setMobileTab('career')}
+          className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${mobileTab === 'career' ? 'text-sky-300 border-b-2 border-sky-400 bg-sky-500/5' : 'text-gray-500'}`}
+        >
+          💼 Career
+        </button>
+      </div>
+
       <div className="flex-1 flex overflow-hidden">
 
-        {/* Left sidebar — Photo + Transform */}
-        <div className="w-44 flex-shrink-0 p-4 flex flex-col items-center gap-3 border-r border-white/10">
+        {/* Left sidebar — Desktop only */}
+        <div className="hidden md:flex w-44 flex-shrink-0 p-4 flex-col items-center gap-3 border-r border-white/10">
           <div className="w-32 h-32 rounded-2xl overflow-hidden border-2 border-purple-500/40 shadow-lg shadow-purple-900/30">
             <img src={capturedPhoto} alt="Your photo" className="w-full h-full object-cover" />
           </div>
@@ -120,11 +153,11 @@ export default function ThemeSelectionScreen({ capturedPhoto, onTransform, onBac
           </Button>
         </div>
 
-        {/* Two columns side by side */}
+        {/* Two columns side by side (desktop) / single tab (mobile) */}
         <div className="flex-1 flex overflow-hidden">
 
           {/* ── Fun & Fantasy column ── */}
-          <div className="flex-1 flex flex-col overflow-hidden border-r border-white/10">
+          <div className={`flex-1 flex-col overflow-hidden border-r border-white/10 ${mobileTab === 'fun' ? 'flex' : 'hidden md:flex'}`}>
             {/* Column header */}
             <div className="flex-shrink-0 px-3 pt-3 pb-2 bg-[#0d0514] border-b border-violet-500/20">
               <div className="flex items-center justify-between">
@@ -182,7 +215,7 @@ export default function ThemeSelectionScreen({ capturedPhoto, onTransform, onBac
           </div>
 
           {/* ── Career Themes column ── */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className={`flex-1 flex-col overflow-hidden ${mobileTab === 'career' ? 'flex' : 'hidden md:flex'}`}>
             {/* Column header */}
             <div className="flex-shrink-0 px-3 pt-3 pb-2 bg-[#050d1a] border-b border-sky-500/20 space-y-2">
               <div className="flex items-center justify-between">

@@ -32,14 +32,14 @@ export default function UserInfoScreen({ capturedPhoto, onNext, onBack }: UserIn
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 text-white flex flex-col">
-      <header className="flex items-center gap-4 px-6 py-4 border-b border-white/10">
+      <header className="flex items-center gap-4 px-4 md:px-6 py-3 md:py-4 border-b border-white/10">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="font-semibold text-lg">Your Details</h1>
       </header>
 
-      <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 p-8">
+      <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 p-6 lg:p-8 overflow-y-auto">
         {/* Photo preview */}
         <div className="flex-shrink-0">
           <div className="w-48 h-48 rounded-2xl overflow-hidden border-2 border-purple-500/40 shadow-xl shadow-purple-900/30">
