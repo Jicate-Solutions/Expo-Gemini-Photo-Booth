@@ -178,21 +178,7 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
 
           {/* Logo area */}
           <div className="text-center mb-8 w-full">
-            {/* Brand badge */}
-            <div className="inline-flex items-center gap-2 bg-purple-900/50 border border-purple-500/30 rounded-full px-4 py-1.5 mb-6 text-xs text-purple-300">
-              <Sparkles className="w-3 h-3" />
-              Jicate Solutions
-            </div>
-
-            {/* Icon */}
-            <div className="relative w-20 h-20 mx-auto mb-5">
-              <div className="absolute inset-0 rounded-2xl bg-purple-600/20 blur-xl animate-pulse" />
-              <div className="relative w-20 h-20 bg-gradient-to-br from-purple-600/30 to-pink-600/20 border border-purple-500/40 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-900/50">
-                <Wand2 className="w-9 h-9 text-purple-300" />
-              </div>
-            </div>
-
-            <h1 className="font-black text-3xl mb-1">
+            <h1 className="font-black text-4xl mb-2">
               <span className="bg-gradient-to-r from-white via-purple-200 to-pink-300 bg-clip-text text-transparent">
                 Magic Booth
               </span>

@@ -91,26 +91,35 @@ export default function ResultScreen({
 
       <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
         {/* Image */}
-        <div className="h-[50vh] lg:h-auto lg:flex-1 overflow-hidden flex-shrink-0">
+        <div className="h-[50vh] lg:h-auto lg:flex-1 overflow-hidden flex-shrink-0 relative">
           <img src={transformedImageUrl} alt="Transformed" className="result-image w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
         </div>
 
         {/* Actions */}
-        <div className="print:hidden lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-4 lg:p-6 flex flex-col gap-3 lg:gap-4 overflow-y-auto">
+        <div className="print:hidden lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-4 lg:p-6 flex flex-col gap-3 lg:gap-4 overflow-y-auto bg-gray-950/80 backdrop-blur-sm">
 
-          {/* WhatsApp QR Button */}
+          {/* WhatsApp Button */}
           {cleanPhone && (
-            <Button onClick={() => window.open(whatsappUrl, '_blank')} className="w-full bg-green-600 hover:bg-green-500 text-white gap-2 py-5 text-base font-semibold">
-              <MessageCircle className="w-5 h-5" /> Send via WhatsApp
-            </Button>
+            <button onClick={() => window.open(whatsappUrl, '_blank')} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 p-px shadow-lg hover:shadow-green-500/30 transition-shadow">
+              <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-500 group-hover:from-green-500 group-hover:to-emerald-400 rounded-[11px] px-6 py-4 transition-all">
+                <MessageCircle className="w-5 h-5 text-white" />
+                <span className="text-white font-semibold text-base">Send via WhatsApp</span>
+              </div>
+              <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+            </button>
           )}
 
-          <Button onClick={() => setShowEdit(!showEdit)} className="w-full bg-blue-600 hover:bg-blue-500 text-white gap-2 py-5 text-base font-semibold">
-            <Wand2 className="w-5 h-5" /> Edit with AI
-          </Button>
+          <button onClick={() => setShowEdit(!showEdit)} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 p-px shadow-lg hover:shadow-blue-500/30 transition-shadow">
+            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 group-hover:from-blue-500 group-hover:to-cyan-400 rounded-[11px] px-6 py-4 transition-all">
+              <Wand2 className="w-5 h-5 text-white" />
+              <span className="text-white font-semibold text-base">Edit with AI</span>
+            </div>
+            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+          </button>
 
           {showEdit && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 space-y-3">
               <Textarea
                 placeholder="Describe the edit you want..."
                 value={editPrompt}
@@ -119,7 +128,7 @@ export default function ResultScreen({
               />
               <button
                 onClick={() => editFileRef.current?.click()}
-                className="flex items-center gap-2 text-xs text-gray-400 hover:text-purple-300"
+                className="flex items-center gap-2 text-xs text-gray-400 hover:text-purple-300 transition-colors"
               >
                 <Upload className="w-3 h-3" /> Add reference image
               </button>
@@ -142,20 +151,27 @@ export default function ResultScreen({
               <Button
                 onClick={() => { onEdit(editPrompt, editRefs); setShowEdit(false); }}
                 disabled={!editPrompt.trim()}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-sm gap-2"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-sm gap-2 border-0"
               >
                 <Wand2 className="w-4 h-4" /> Apply Edit
               </Button>
             </div>
           )}
 
-          <Button onClick={onTryAnotherTheme} className="w-full bg-pink-600 hover:bg-pink-500 text-white gap-2 py-5 text-base font-semibold">
-            <RefreshCw className="w-5 h-5" /> Try Another Theme
-          </Button>
+          <button onClick={onTryAnotherTheme} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 p-px shadow-lg hover:shadow-pink-500/30 transition-shadow">
+            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-pink-600 to-rose-500 group-hover:from-pink-500 group-hover:to-rose-400 rounded-[11px] px-6 py-4 transition-all">
+              <RefreshCw className="w-5 h-5 text-white" />
+              <span className="text-white font-semibold text-base">Try Another Theme</span>
+            </div>
+            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+          </button>
 
-          <Button onClick={() => window.print()} className="w-full bg-gray-700 hover:bg-gray-600 text-white gap-2 py-5 text-base font-semibold">
-            <Printer className="w-5 h-5" /> Print
-          </Button>
+          <button onClick={() => window.print()} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 p-px hover:shadow-gray-500/20 transition-shadow">
+            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-gray-700 to-gray-600 group-hover:from-gray-600 group-hover:to-gray-500 rounded-[11px] px-6 py-4 transition-all">
+              <Printer className="w-5 h-5 text-white" />
+              <span className="text-white font-semibold text-base">Print</span>
+            </div>
+          </button>
 
         </div>
       </div>
