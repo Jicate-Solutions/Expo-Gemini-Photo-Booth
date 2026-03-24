@@ -60,30 +60,77 @@ export default function ResultScreen({
     const FRAME_WIDTH  = '100mm';   // ← update this
     const FRAME_HEIGHT = '150mm';   // ← update this
 
-    const printWindow = window.open('', '_blank', 'width=600,height=800');
+    // Open centered on screen
+    const winW = 520, winH = 720;
+    const left = Math.round((window.screen.width - winW) / 2);
+    const top  = Math.round((window.screen.height - winH) / 2);
+    const printWindow = window.open('', '_blank', `width=${winW},height=${winH},left=${left},top=${top},toolbar=0,menubar=0,scrollbars=0`);
     if (!printWindow) return;
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Print</title>
+          <title>Gemini Magic Booth — Print</title>
           <style>
             @page { size: ${FRAME_WIDTH} ${FRAME_HEIGHT} portrait; margin: 0; }
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; overflow: hidden; }
+            body {
+              background: #0a0a0f;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              font-family: -apple-system, sans-serif;
+              color: white;
+            }
+            .title {
+              font-size: 13px;
+              color: #a78bfa;
+              font-weight: 700;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              margin-bottom: 16px;
+            }
+            .frame {
+              border: 2px solid rgba(139,92,246,0.4);
+              border-radius: 12px;
+              overflow: hidden;
+              box-shadow: 0 0 40px rgba(139,92,246,0.3), 0 20px 60px rgba(0,0,0,0.6);
+            }
             img {
               width: ${FRAME_WIDTH};
               height: ${FRAME_HEIGHT};
               object-fit: cover;
               display: block;
             }
+            .btn {
+              margin-top: 20px;
+              background: linear-gradient(135deg, #7c3aed, #db2777);
+              color: white;
+              border: none;
+              padding: 12px 40px;
+              border-radius: 10px;
+              font-size: 15px;
+              font-weight: 700;
+              cursor: pointer;
+              letter-spacing: 1px;
+            }
+            .btn:hover { opacity: 0.9; }
+            @media print {
+              body { background: white; }
+              .title, .btn { display: none; }
+              .frame { border: none; border-radius: 0; box-shadow: none; }
+              img { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; }
+            }
           </style>
         </head>
         <body>
-          <img src="${transformedImageUrl}" />
-          <script>
-            window.onload = function() { window.print(); };
-          <\/script>
+          <div class="title">✦ Your Transformation</div>
+          <div class="frame">
+            <img src="${transformedImageUrl}" />
+          </div>
+          <button class="btn" onclick="window.print()">🖨️ Print Now</button>
         </body>
       </html>
     `);
