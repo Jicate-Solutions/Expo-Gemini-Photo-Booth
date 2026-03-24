@@ -78,7 +78,7 @@ export default function UserInfoScreen({ capturedPhoto, onNext, onBack }: UserIn
               <label className="text-sm text-gray-300 mb-1 block">WhatsApp Number *</label>
               <Input
                 type="tel"
-                placeholder="+91 90000 00000"
+                placeholder="Enter your 10-digit number"
                 value={form.mobile}
                 onChange={(e) => setForm({ ...form, mobile: e.target.value })}
                 className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
