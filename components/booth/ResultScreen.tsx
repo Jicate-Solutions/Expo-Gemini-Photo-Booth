@@ -55,6 +55,41 @@ export default function ResultScreen({
     }
   };
 
+  const handlePrint = () => {
+    // ── FRAME SIZE — update width/height when exact dimensions are provided ──
+    const FRAME_WIDTH  = '100mm';   // ← update this
+    const FRAME_HEIGHT = '150mm';   // ← update this
+
+    const printWindow = window.open('', '_blank', 'width=600,height=800');
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Print</title>
+          <style>
+            @page { size: ${FRAME_WIDTH} ${FRAME_HEIGHT} portrait; margin: 0; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; overflow: hidden; }
+            img {
+              width: ${FRAME_WIDTH};
+              height: ${FRAME_HEIGHT};
+              object-fit: cover;
+              display: block;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${transformedImageUrl}" />
+          <script>
+            window.onload = function() { window.print(); };
+          <\/script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const handleEditRefImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     files.forEach((file) => {
@@ -166,7 +201,7 @@ export default function ResultScreen({
             <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
           </button>
 
-          <button onClick={() => window.print()} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 p-px hover:shadow-gray-500/20 transition-shadow">
+          <button onClick={handlePrint} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 p-px hover:shadow-gray-500/20 transition-shadow">
             <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-gray-700 to-gray-600 group-hover:from-gray-600 group-hover:to-gray-500 rounded-[11px] px-6 py-4 transition-all">
               <Printer className="w-5 h-5 text-white" />
               <span className="text-white font-semibold text-base">Print</span>
