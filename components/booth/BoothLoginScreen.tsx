@@ -88,11 +88,7 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
             {[...SHOWCASE.slice(0, 6), ...SHOWCASE.slice(0, 6)].map((item, i) => (
               <div key={i} className="relative rounded-2xl overflow-hidden flex-shrink-0 h-52 group">
                 <img src={item.img} alt={item.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                <div className="absolute bottom-2 left-3">
-                  <span className="text-lg">{item.emoji}</span>
-                  <p className="text-white font-bold text-xs uppercase tracking-wide">{item.label}</p>
-                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
               </div>
             ))}
           </div>
@@ -101,11 +97,7 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
             {[...SHOWCASE.slice(6), ...SHOWCASE.slice(6)].map((item, i) => (
               <div key={i} className="relative rounded-2xl overflow-hidden flex-shrink-0 h-52 group">
                 <img src={item.img} alt={item.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                <div className="absolute bottom-2 left-3">
-                  <span className="text-lg">{item.emoji}</span>
-                  <p className="text-white font-bold text-xs uppercase tracking-wide">{item.label}</p>
-                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
               </div>
             ))}
           </div>
