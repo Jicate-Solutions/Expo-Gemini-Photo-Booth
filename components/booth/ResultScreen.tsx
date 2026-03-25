@@ -84,13 +84,13 @@ export default function ResultScreen({
 
     doc.open();
     doc.write(`<!DOCTYPE html><html><head><style>
-      @page { size: 4in 6in portrait; margin: 0; }
+      @page { margin: 0; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { width: 4in; height: 6in; overflow: hidden; background: white; }
-      .frame { position: relative; width: 4in; height: 6in; overflow: hidden; }
-      .photo { display: block; width: 4in; height: 6in; object-fit: cover; }
-      .logo-tl { position: absolute; top: 10px; left: 10px; width: 100px; }
-      .logo-br { position: absolute; bottom: 10px; right: 10px; width: 90px; }
+      html, body { width: 100vw; height: 100vh; overflow: hidden; background: white; }
+      .frame { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+      .photo { display: block; width: 100%; height: 100%; object-fit: cover; }
+      .logo-tl { position: absolute; top: 3%; left: 3%; width: 22%; }
+      .logo-br { position: absolute; bottom: 3%; right: 3%; width: 18%; }
     </style></head><body>
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
