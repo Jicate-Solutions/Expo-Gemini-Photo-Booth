@@ -92,7 +92,7 @@ export default function ResultScreen({
       .photo { display: block; width: 100%; height: 100%; object-fit: cover; }
       .logo-box { position: absolute; width: 22%; height: 13%; background: white; padding: 5px; display: flex; align-items: center; justify-content: center; }
       .logo-box img { width: 100%; height: 100%; object-fit: contain; }
-      .tl { top: 9mm; left: 9mm; }
+      .tl { top: 9mm; left: 14mm; }
       .br { bottom: 9mm; right: 9mm; }
     </style></head><body>
       <div class="frame">
