@@ -55,15 +55,26 @@ export default function ResultScreen({
     }
   };
 
-  const handlePrint = () => {
-    const FRAME_WIDTH  = '4in';
-    const FRAME_HEIGHT = '6in';
+  const handlePrint = async () => {
+    // Convert a URL to base64 so it loads reliably inside the iframe
+    const toBase64 = async (url: string): Promise<string> => {
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      } catch { return url; }
+    };
 
     const origin = window.location.origin;
-    const jkknLogo   = `${origin}/jkkn-logo.png`;
-    const jkkn100Logo = `${origin}/jkkn-100-logo.png`;
+    const [logo1, logo2] = await Promise.all([
+      toBase64(`${origin}/jkkn-logo.png`),
+      toBase64(`${origin}/jkkn-100-logo.png`),
+    ]);
 
-    // Use a hidden iframe — triggers ONE print dialog, no extra popup window
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;';
     document.body.appendChild(iframe);
@@ -73,35 +84,35 @@ export default function ResultScreen({
 
     doc.open();
     doc.write(`<!DOCTYPE html><html><head><style>
-      @page { size: ${FRAME_WIDTH} ${FRAME_HEIGHT} portrait; margin: 0; }
+      @page { size: 4in 6in portrait; margin: 0; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; background: white; }
-      .frame { position: relative; width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; overflow: hidden; }
-      .frame img.photo { width: 100%; height: 100%; object-fit: cover; display: block; }
-      .logo-tl { position: absolute; top: 8px; left: 8px; width: 90px; }
-      .logo-br { position: absolute; bottom: 8px; right: 8px; width: 80px; }
+      html, body { width: 4in; height: 6in; overflow: hidden; background: white; }
+      .frame { position: relative; width: 4in; height: 6in; overflow: hidden; }
+      .photo { display: block; width: 4in; height: 6in; object-fit: cover; }
+      .logo-tl { position: absolute; top: 10px; left: 10px; width: 100px; }
+      .logo-br { position: absolute; bottom: 10px; right: 10px; width: 90px; }
     </style></head><body>
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
-        <img class="logo-tl" src="${jkknLogo}" />
-        <img class="logo-br" src="${jkkn100Logo}" />
+        <img class="logo-tl" src="${logo1}" />
+        <img class="logo-br" src="${logo2}" />
       </div>
     </body></html>`);
     doc.close();
 
-    const img = doc.querySelector('img');
+    const allImgs = Array.from(doc.querySelectorAll('img'));
+    let loaded = 0;
     const doPrint = () => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
       setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 2000);
     };
-    if (img) {
-      img.onload = doPrint;
-      img.onerror = doPrint;
-      if (img.complete) doPrint();
-    } else {
-      setTimeout(doPrint, 500);
-    }
+    if (allImgs.length === 0) { setTimeout(doPrint, 500); return; }
+    allImgs.forEach((img) => {
+      const onDone = () => { loaded++; if (loaded === allImgs.length) doPrint(); };
+      if ((img as HTMLImageElement).complete) { onDone(); }
+      else { img.onload = onDone; img.onerror = onDone; }
+    });
   };
 
   const handleEditRefImage = (e: React.ChangeEvent<HTMLInputElement>) => {
