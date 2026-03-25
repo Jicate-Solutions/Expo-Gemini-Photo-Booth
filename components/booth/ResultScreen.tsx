@@ -89,8 +89,8 @@ export default function ResultScreen({
       html, body { width: 100vw; height: 100vh; overflow: hidden; background: white; }
       .frame { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
       .photo { display: block; width: 100%; height: 100%; object-fit: cover; }
-      .logo-tl { position: absolute; top: 6px; left: 6px; width: 22%; }
-      .logo-br { position: absolute; bottom: 6px; right: 6px; width: 20%; }
+      .logo-tl { position: absolute; top: 0; left: 0; width: 22%; background: white; padding: 6px 8px 6px 6px; }
+      .logo-br { position: absolute; bottom: 0; right: 0; width: 20%; background: white; padding: 6px 6px 6px 8px; }
     </style></head><body>
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
