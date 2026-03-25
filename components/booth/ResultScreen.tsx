@@ -89,13 +89,15 @@ export default function ResultScreen({
       html, body { width: 100vw; height: 100vh; overflow: hidden; background: white; }
       .frame { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
       .photo { display: block; width: 100%; height: 100%; object-fit: cover; }
-      .logo-tl { position: absolute; top: 0; left: 0; width: 22%; background: white; padding: 6px 8px 6px 6px; }
-      .logo-br { position: absolute; bottom: 0; right: 0; width: 20%; background: white; padding: 6px 6px 6px 8px; }
+      .logo-box { position: absolute; width: 22%; height: 13%; background: white; padding: 5px; display: flex; align-items: center; justify-content: center; }
+      .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+      .tl { top: 0; left: 0; }
+      .br { bottom: 0; right: 0; }
     </style></head><body>
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
-        <img class="logo-tl" src="${logo1}" />
-        <img class="logo-br" src="${logo2}" />
+        <div class="logo-box tl"><img src="${logo1}" /></div>
+        <div class="logo-box br"><img src="${logo2}" /></div>
       </div>
     </body></html>`);
     doc.close();
