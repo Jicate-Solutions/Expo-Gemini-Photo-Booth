@@ -56,9 +56,12 @@ export default function ResultScreen({
   };
 
   const handlePrint = () => {
-    // ── FRAME SIZE — update these two values when exact dimensions are given ──
-    const FRAME_WIDTH  = '100mm';  // ← update this
-    const FRAME_HEIGHT = '150mm';  // ← update this
+    const FRAME_WIDTH  = '4in';
+    const FRAME_HEIGHT = '6in';
+
+    const origin = window.location.origin;
+    const jkknLogo   = `${origin}/jkkn-logo.png`;
+    const jkkn100Logo = `${origin}/jkkn-100-logo.png`;
 
     // Use a hidden iframe — triggers ONE print dialog, no extra popup window
     const iframe = document.createElement('iframe');
@@ -70,12 +73,19 @@ export default function ResultScreen({
 
     doc.open();
     doc.write(`<!DOCTYPE html><html><head><style>
-      @page { size: auto; margin: 0; }
+      @page { size: ${FRAME_WIDTH} ${FRAME_HEIGHT} portrait; margin: 0; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; background: white; }
-      img { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; object-fit: cover; display: block; }
+      html, body { width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; background: white; }
+      .frame { position: relative; width: ${FRAME_WIDTH}; height: ${FRAME_HEIGHT}; overflow: hidden; }
+      .frame img.photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .logo-tl { position: absolute; top: 8px; left: 8px; width: 90px; }
+      .logo-br { position: absolute; bottom: 8px; right: 8px; width: 80px; }
     </style></head><body>
-      <img src="${transformedImageUrl}" />
+      <div class="frame">
+        <img class="photo" src="${transformedImageUrl}" />
+        <img class="logo-tl" src="${jkknLogo}" />
+        <img class="logo-br" src="${jkkn100Logo}" />
+      </div>
     </body></html>`);
     doc.close();
 
