@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { Wand2, Eye, EyeOff, Sparkles, Camera, Zap, Star } from 'lucide-react';
+import { BoothSession } from '@/types';
 
 interface BoothLoginScreenProps {
-  onLogin: () => void;
+  onLogin: (session: BoothSession) => void;
 }
 
 const SHOWCASE = [
@@ -23,7 +24,7 @@ const SHOWCASE = [
 ];
 
 export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -37,14 +38,14 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
       const res = await fetch('/api/booth-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
+      const data = await res.json();
       if (!res.ok) {
-        const json = await res.json();
-        setError(json.error || 'Invalid credentials');
+        setError(data.error || 'Invalid credentials');
         return;
       }
-      onLogin();
+      onLogin(data.session);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -194,12 +195,12 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
           {/* Form */}
           <form onSubmit={handleSubmit} className="w-full space-y-4">
             <div>
-              <label className="text-xs font-medium text-gray-400 mb-2 block">Email Address</label>
+              <label className="text-xs font-medium text-gray-400 mb-2 block">Expo Username</label>
               <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                type="text"
+                placeholder="Enter expo username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-gray-600 outline-none focus:border-purple-500/60 focus:bg-purple-500/5 transition-all"
                 autoComplete="off"
                 autoFocus
@@ -231,7 +232,7 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
 
             <button
               type="submit"
-              disabled={loading || !email || !password}
+              disabled={loading || !username || !password}
               className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 p-px shadow-2xl shadow-purple-900/50 hover:shadow-purple-600/40 transition-shadow duration-300 disabled:opacity-40 mt-2"
             >
               <div className="relative flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 group-hover:from-purple-500 group-hover:to-pink-500 rounded-[11px] px-6 py-3.5 transition-all duration-300">

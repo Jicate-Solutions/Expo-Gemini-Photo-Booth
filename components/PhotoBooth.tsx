@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { AppState, AppScreen, Theme, CareerStyle, UserInfo } from '@/types';
+import { AppState, AppScreen, Theme, CareerStyle, UserInfo, BoothSession } from '@/types';
 import { STICKER_STORAGE_KEY, MAX_STICKERS, StickerImage } from '@/app/sticker-sheet/page';
 import LandingScreen from './booth/LandingScreen';
 import CameraScreen from './booth/CameraScreen';
@@ -29,12 +29,30 @@ const initialState: AppState = {
 export default function PhotoBooth() {
   const [boothLoggedIn, setBoothLoggedIn] = useState(false);
   const [state, setState] = useState<AppState>(initialState);
+  const [session, setSession] = useState<BoothSession | null>(null);
+  const [expoGroups, setExpoGroups] = useState<{ id: string; name: string }[]>([]);
+  const [showStats, setShowStats] = useState(false);
 
   // Check booth login session on mount
   useEffect(() => {
-    const loggedIn = sessionStorage.getItem('booth_logged_in');
-    if (loggedIn === 'true') setBoothLoggedIn(true);
+    const saved = sessionStorage.getItem('booth_session_data');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as BoothSession;
+        setSession(parsed);
+        setBoothLoggedIn(true);
+      } catch { /* ignore */ }
+    }
   }, []);
+
+  // Fetch groups when session is available
+  useEffect(() => {
+    if (!session?.expoId) return;
+    fetch(`/api/expos/${session.expoId}/groups`)
+      .then(r => r.json())
+      .then(d => setExpoGroups(d.data || []))
+      .catch(() => setExpoGroups([]));
+  }, [session?.expoId]);
 
   // After mount, restore saved session (avoids hydration mismatch)
   useEffect(() => {
@@ -59,9 +77,20 @@ export default function PhotoBooth() {
     }
   }, [state]);
 
+  const handleBoothLogin = (sessionData: BoothSession) => {
+    setSession(sessionData);
+    setBoothLoggedIn(true);
+    sessionStorage.setItem('booth_session_data', JSON.stringify(sessionData));
+    sessionStorage.setItem('booth_logged_in', 'true');
+  };
+
   const clearSession = () => {
     sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem('booth_session_data');
+    sessionStorage.removeItem('booth_logged_in');
     setState(initialState);
+    setSession(null);
+    setBoothLoggedIn(false);
   };
 
   const go = (screen: AppScreen, extra?: Partial<AppState>) =>
@@ -147,6 +176,8 @@ export default function PhotoBooth() {
               name: state.userInfo.name,
               mobile: state.userInfo.mobile,
               group: state.userInfo.group,
+              expoId: session?.expoId || null,
+              groupId: state.userInfo?.groupId || null,
               theme: themeTitle,
               themeType,
               careerStyle,
@@ -214,14 +245,7 @@ export default function PhotoBooth() {
   );
 
   if (!boothLoggedIn) {
-    return (
-      <BoothLoginScreen
-        onLogin={() => {
-          sessionStorage.setItem('booth_logged_in', 'true');
-          setBoothLoggedIn(true);
-        }}
-      />
-    );
+    return <BoothLoginScreen onLogin={handleBoothLogin} />;
   }
 
   switch (state.screen) {
@@ -249,6 +273,7 @@ export default function PhotoBooth() {
       return (
         <UserInfoScreen
           capturedPhoto={state.capturedPhoto!}
+          groups={expoGroups}
           onNext={handleUserInfo}
           onBack={() => go('camera')}
         />
