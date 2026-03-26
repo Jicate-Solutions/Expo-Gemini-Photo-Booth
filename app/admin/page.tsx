@@ -8,7 +8,7 @@ import ExpoForm from '@/components/admin/ExpoForm';
 import ExpoDetail from '@/components/admin/ExpoDetail';
 import { ExpoOverview } from '@/types';
 
-type AdminView = 'login' | 'expos' | 'create-expo' | 'expo-detail';
+type AdminView = 'login' | 'expos' | 'create-expo' | 'edit-expo' | 'expo-detail';
 
 export default function AdminPage() {
   const [view, setView] = useState<AdminView>('login');
@@ -21,6 +21,7 @@ export default function AdminPage() {
   const [expos, setExpos] = useState<ExpoOverview[]>([]);
   const [selectedExpoId, setSelectedExpoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [editExpoData, setEditExpoData] = useState<{ id: string; name: string; venue: string | null; start_date: string; end_date: string; username: string; groups: { id: string; name: string }[] } | null>(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem('admin_token');
@@ -94,6 +95,76 @@ export default function AdminPage() {
     await fetchExpos();
   };
 
+  const handleEditExpo = async (expoId: string) => {
+    try {
+      const res = await fetch(`/api/expos/${expoId}`);
+      const { data } = await res.json();
+      if (data) {
+        setEditExpoData(data);
+        setView('edit-expo');
+      }
+    } catch { /* ignore */ }
+  };
+
+  const handleUpdateExpo = async (data: {
+    name: string; venue: string; start_date: string; end_date: string;
+    username: string; password: string; groups: string[];
+  }) => {
+    if (!editExpoData) return;
+
+    // Update expo details
+    const updateBody: Record<string, unknown> = {
+      name: data.name,
+      venue: data.venue,
+      start_date: data.start_date,
+      end_date: data.end_date,
+    };
+    if (data.password) updateBody.password = data.password;
+
+    const res = await fetch(`/api/expos/${editExpoData.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updateBody),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to update expo');
+    }
+
+    // Sync groups: add any new ones
+    const existingNames = editExpoData.groups.map(g => g.name);
+    const newGroups = data.groups.filter(g => !existingNames.includes(g));
+    if (newGroups.length > 0) {
+      await fetch(`/api/expos/${editExpoData.id}/groups`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ names: newGroups }),
+      });
+    }
+
+    // Remove groups that were deleted
+    const removedGroups = editExpoData.groups.filter(g => !data.groups.includes(g.name));
+    for (const g of removedGroups) {
+      await fetch(`/api/expos/${editExpoData.id}/groups`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupId: g.id }),
+      });
+    }
+
+    setEditExpoData(null);
+    setView('expos');
+    await fetchExpos();
+  };
+
+  const handleDeleteExpo = async (expoId: string) => {
+    const res = await fetch(`/api/expos/${expoId}`, { method: 'DELETE' });
+    if (res.ok) {
+      setView('expos');
+      await fetchExpos();
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
   }
@@ -151,11 +222,22 @@ export default function AdminPage() {
           <ExpoForm onSave={handleCreateExpo} onCancel={() => setView('expos')} />
         </>
       )}
+      {view === 'edit-expo' && editExpoData && (
+        <>
+          <AdminHeader title={`Edit: ${editExpoData.name}`} onLogout={handleLogout} onBack={() => { setEditExpoData(null); setView('expo-detail'); }} />
+          <ExpoForm onSave={handleUpdateExpo} onCancel={() => { setEditExpoData(null); setView('expo-detail'); }} initialData={editExpoData} />
+        </>
+      )}
       {view === 'expo-detail' && selectedExpoId && (
         <>
           <AdminHeader title={expos.find(e => e.id === selectedExpoId)?.name || 'Expo Detail'}
             onLogout={handleLogout} onBack={() => setView('expos')} />
-          <ExpoDetail expoId={selectedExpoId} adminToken={adminToken} />
+          <ExpoDetail
+            expoId={selectedExpoId}
+            adminToken={adminToken}
+            onEdit={() => handleEditExpo(selectedExpoId)}
+            onDelete={() => handleDeleteExpo(selectedExpoId)}
+          />
         </>
       )}
     </div>

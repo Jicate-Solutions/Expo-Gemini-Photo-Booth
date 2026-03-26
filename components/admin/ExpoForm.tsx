@@ -5,22 +5,34 @@ import { X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+interface ExpoInitialData {
+  id: string;
+  name: string;
+  venue: string | null;
+  start_date: string;
+  end_date: string;
+  username: string;
+  groups: { id: string; name: string }[];
+}
+
 interface ExpoFormProps {
   onSave: (data: {
     name: string; venue: string; start_date: string; end_date: string;
     username: string; password: string; groups: string[];
   }) => Promise<void>;
   onCancel: () => void;
+  initialData?: ExpoInitialData;
 }
 
-export default function ExpoForm({ onSave, onCancel }: ExpoFormProps) {
-  const [name, setName] = useState('');
-  const [venue, setVenue] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [username, setUsername] = useState('');
+export default function ExpoForm({ onSave, onCancel, initialData }: ExpoFormProps) {
+  const isEdit = !!initialData;
+  const [name, setName] = useState(initialData?.name || '');
+  const [venue, setVenue] = useState(initialData?.venue || '');
+  const [startDate, setStartDate] = useState(initialData?.start_date || '');
+  const [endDate, setEndDate] = useState(initialData?.end_date || '');
+  const [username, setUsername] = useState(initialData?.username || '');
   const [password, setPassword] = useState('');
-  const [groups, setGroups] = useState<string[]>([]);
+  const [groups, setGroups] = useState<string[]>(initialData?.groups.map(g => g.name) || []);
   const [groupInput, setGroupInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +49,7 @@ export default function ExpoForm({ onSave, onCancel }: ExpoFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !startDate || !endDate || !username || !password) {
+    if (!name || !startDate || !endDate || !username || (!isEdit && !password)) {
       setError('All required fields must be filled');
       return;
     }
@@ -55,7 +67,7 @@ export default function ExpoForm({ onSave, onCancel }: ExpoFormProps) {
   return (
     <div className="max-w-xl mx-auto p-6">
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-        <h2 className="text-xl font-bold text-white mb-6">Create New Expo</h2>
+        <h2 className="text-xl font-bold text-white mb-6">{isEdit ? 'Edit Expo' : 'Create New Expo'}</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -89,11 +101,12 @@ export default function ExpoForm({ onSave, onCancel }: ExpoFormProps) {
               <div>
                 <label className="text-xs font-medium text-gray-400 mb-1.5 block">Username *</label>
                 <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="e.g. techfest2026"
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600" />
+                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600" disabled={isEdit} />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-400 mb-1.5 block">Password *</label>
-                <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Set a strong password"
+                <label className="text-xs font-medium text-gray-400 mb-1.5 block">{isEdit ? 'New Password (leave blank to keep)' : 'Password *'}</label>
+                <Input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                  placeholder={isEdit ? 'Leave blank to keep current' : 'Set a strong password'}
                   className="bg-white/5 border-white/10 text-white placeholder:text-gray-600" />
               </div>
             </div>
@@ -135,7 +148,7 @@ export default function ExpoForm({ onSave, onCancel }: ExpoFormProps) {
             </Button>
             <Button type="submit" disabled={saving}
               className="flex-1 bg-purple-600 hover:bg-purple-500 text-white">
-              {saving ? 'Creating...' : 'Create Expo'}
+              {saving ? 'Saving...' : isEdit ? 'Update Expo' : 'Create Expo'}
             </Button>
           </div>
         </form>
