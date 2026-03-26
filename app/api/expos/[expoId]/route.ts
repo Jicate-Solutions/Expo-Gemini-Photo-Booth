@@ -64,16 +64,22 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
 // DELETE: Soft-delete expo
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
-  const supabase = createClient();
+  try {
+    const supabase = createClient();
 
-  const { error } = await supabase
-    .from('expos')
-    .update({ is_active: false })
-    .eq('id', params.expoId);
+    const { error } = await supabase
+      .from('expos')
+      .update({ is_active: false })
+      .eq('id', params.expoId);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Delete expo error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error('Delete expo exception:', e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true });
 }

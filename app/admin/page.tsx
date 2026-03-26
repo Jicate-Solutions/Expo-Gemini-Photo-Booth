@@ -158,10 +158,18 @@ export default function AdminPage() {
   };
 
   const handleDeleteExpo = async (expoId: string) => {
-    const res = await fetch(`/api/expos/${expoId}`, { method: 'DELETE' });
-    if (res.ok) {
-      setView('expos');
-      await fetchExpos();
+    try {
+      const res = await fetch(`/api/expos/${expoId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setSelectedExpoId(null);
+        setView('expos');
+        await fetchExpos();
+      } else {
+        const err = await res.json();
+        alert('Failed to deactivate: ' + (err.error || 'Unknown error'));
+      }
+    } catch (e) {
+      alert('Error: ' + String(e));
     }
   };
 
