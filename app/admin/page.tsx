@@ -35,7 +35,7 @@ export default function AdminPage() {
 
   const fetchExpos = async () => {
     try {
-      const res = await fetch('/api/stats/overview', { cache: 'no-store' });
+      const res = await fetch(`/api/stats/overview?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       setExpos(data.expos || []);
     } catch { /* ignore */ }
@@ -152,9 +152,19 @@ export default function AdminPage() {
       });
     }
 
+    // Immediately update local state so UI reflects changes instantly
+    setExpos(prev => prev.map(e => e.id === editExpoData.id ? {
+      ...e,
+      name: data.name,
+      venue: data.venue,
+      start_date: data.start_date,
+      end_date: data.end_date,
+    } : e));
+
     setEditExpoData(null);
     setView('expos');
-    await fetchExpos();
+    // Also refresh from server in background
+    fetchExpos();
   };
 
   const handleDeleteExpo = async (expoId: string) => {
