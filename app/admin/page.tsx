@@ -163,8 +163,6 @@ export default function AdminPage() {
 
     setEditExpoData(null);
     setView('expos');
-    // Also refresh from server in background
-    fetchExpos();
   };
 
   const handleDeleteExpo = async (expoId: string) => {
@@ -175,8 +173,6 @@ export default function AdminPage() {
         setExpos(prev => prev.map(e => e.id === expoId ? { ...e, is_active: false } : e));
         setSelectedExpoId(null);
         setView('expos');
-        // Also refresh from server for consistency
-        await fetchExpos();
       } else {
         const err = await res.json();
         alert('Failed to deactivate: ' + (err.error || 'Unknown error'));
@@ -195,7 +191,6 @@ export default function AdminPage() {
       });
       if (res.ok) {
         setExpos(prev => prev.map(e => e.id === expoId ? { ...e, is_active: true } : e));
-        await fetchExpos();
       }
     } catch { /* ignore */ }
   };
