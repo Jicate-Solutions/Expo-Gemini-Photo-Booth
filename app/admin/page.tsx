@@ -35,7 +35,7 @@ export default function AdminPage() {
 
   const fetchExpos = async () => {
     try {
-      const res = await fetch('/api/stats/overview');
+      const res = await fetch('/api/stats/overview', { cache: 'no-store' });
       const data = await res.json();
       setExpos(data.expos || []);
     } catch { /* ignore */ }

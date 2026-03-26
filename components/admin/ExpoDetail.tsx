@@ -31,10 +31,12 @@ export default function ExpoDetail({ expoId, adminToken, onEdit, onDelete }: Exp
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterThemeType, setFilterThemeType] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
+  const loadData = () => {
+    setLoading(true);
     Promise.all([
-      fetch(`/api/expos/${expoId}/stats`).then(r => r.json()),
+      fetch(`/api/expos/${expoId}/stats`, { cache: 'no-store' }).then(r => r.json()),
       fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,7 +46,11 @@ export default function ExpoDetail({ expoId, adminToken, onEdit, onDelete }: Exp
       setStats(statsData);
       setVisitors(visitorsData.data || []);
     }).finally(() => setLoading(false));
-  }, [expoId, adminToken]);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [expoId, adminToken, refreshKey]);
 
   if (loading) return <div className="flex items-center justify-center py-20 text-gray-500">Loading stats...</div>;
   if (!stats) return <div className="text-center py-20 text-gray-500">Failed to load stats</div>;
