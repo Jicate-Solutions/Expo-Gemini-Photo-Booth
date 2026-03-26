@@ -10,9 +10,11 @@ interface LandingScreenProps {
   onOpenCamera: () => void;
   onPhotoUpload: (photo: string) => void;
   onLogout: () => void;
+  expoName?: string;
+  onShowStats?: () => void;
 }
 
-export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout }: LandingScreenProps) {
+export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, expoName, onShowStats }: LandingScreenProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,7 +71,27 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout }:
   );
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white overflow-hidden">
+    <div className="min-h-screen bg-gray-950 text-white overflow-hidden relative">
+
+      {expoName && (
+        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-black/50 backdrop-blur-sm border-b border-white/10">
+          <span className="text-xs text-purple-300 font-medium truncate">
+            Active: {expoName}
+          </span>
+          <div className="flex items-center gap-2">
+            {onShowStats && (
+              <button onClick={onShowStats} className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition-colors">
+                Stats
+              </button>
+            )}
+            {onLogout && (
+              <button onClick={onLogout} className="text-xs text-gray-400 hover:text-red-400 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors">
+                Logout
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Global background glows */}
       <div className="fixed inset-0 bg-gradient-to-br from-purple-950/30 via-gray-950 to-black pointer-events-none" />

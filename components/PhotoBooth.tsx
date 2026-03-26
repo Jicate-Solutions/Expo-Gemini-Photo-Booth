@@ -11,6 +11,7 @@ import LoadingScreen from './booth/LoadingScreen';
 import ResultScreen from './booth/ResultScreen';
 import ErrorScreen from './booth/ErrorScreen';
 import BoothLoginScreen from './booth/BoothLoginScreen';
+import ExpoStatsView from './booth/ExpoStatsView';
 
 const STORAGE_KEY = 'booth_session';
 
@@ -248,16 +249,25 @@ export default function PhotoBooth() {
     return <BoothLoginScreen onLogin={handleBoothLogin} />;
   }
 
+  if (showStats && session) {
+    return (
+      <ExpoStatsView
+        expoId={session.expoId}
+        expoName={session.expoName}
+        onBack={() => setShowStats(false)}
+      />
+    );
+  }
+
   switch (state.screen) {
     case 'landing':
       return (
         <LandingScreen
           onOpenCamera={() => go('camera')}
           onPhotoUpload={handlePhotoReady}
-          onLogout={() => {
-            sessionStorage.removeItem('booth_logged_in');
-            setBoothLoggedIn(false);
-          }}
+          onLogout={clearSession}
+          expoName={session?.expoName}
+          onShowStats={() => setShowStats(true)}
         />
       );
 
