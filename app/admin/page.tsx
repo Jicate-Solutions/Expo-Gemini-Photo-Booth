@@ -161,8 +161,11 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/expos/${expoId}`, { method: 'DELETE' });
       if (res.ok) {
+        // Immediately update local state to reflect the change
+        setExpos(prev => prev.map(e => e.id === expoId ? { ...e, is_active: false } : e));
         setSelectedExpoId(null);
         setView('expos');
+        // Also refresh from server for consistency
         await fetchExpos();
       } else {
         const err = await res.json();
@@ -171,6 +174,20 @@ export default function AdminPage() {
     } catch (e) {
       alert('Error: ' + String(e));
     }
+  };
+
+  const handleReactivateExpo = async (expoId: string) => {
+    try {
+      const res = await fetch(`/api/expos/${expoId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: true }),
+      });
+      if (res.ok) {
+        setExpos(prev => prev.map(e => e.id === expoId ? { ...e, is_active: true } : e));
+        await fetchExpos();
+      }
+    } catch { /* ignore */ }
   };
 
   if (loading) {
@@ -221,7 +238,7 @@ export default function AdminPage() {
         <>
           <AdminHeader title="Expo Dashboard" subtitle={`${expos.length} expos total`}
             onLogout={handleLogout} onRefresh={handleRefresh} onCreateExpo={() => setView('create-expo')} refreshing={refreshing} />
-          <ExpoList expos={expos} onSelect={(id) => { setSelectedExpoId(id); setView('expo-detail'); }} />
+          <ExpoList expos={expos} onSelect={(id) => { setSelectedExpoId(id); setView('expo-detail'); }} onReactivate={handleReactivateExpo} />
         </>
       )}
       {view === 'create-expo' && (
@@ -243,8 +260,10 @@ export default function AdminPage() {
           <ExpoDetail
             expoId={selectedExpoId}
             adminToken={adminToken}
+            isActive={expos.find(e => e.id === selectedExpoId)?.is_active ?? true}
             onEdit={() => handleEditExpo(selectedExpoId)}
             onDelete={() => handleDeleteExpo(selectedExpoId)}
+            onReactivate={() => handleReactivateExpo(selectedExpoId)}
           />
         </>
       )}

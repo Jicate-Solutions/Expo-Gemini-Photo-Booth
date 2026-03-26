@@ -20,11 +20,13 @@ interface Row {
 interface ExpoDetailProps {
   expoId: string;
   adminToken: string;
+  isActive?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
+  onReactivate?: () => void;
 }
 
-export default function ExpoDetail({ expoId, adminToken, onEdit, onDelete }: ExpoDetailProps) {
+export default function ExpoDetail({ expoId, adminToken, isActive = true, onEdit, onDelete, onReactivate }: ExpoDetailProps) {
   const [stats, setStats] = useState<ExpoStats | null>(null);
   const [visitors, setVisitors] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,27 +97,44 @@ export default function ExpoDetail({ expoId, adminToken, onEdit, onDelete }: Exp
 
   return (
     <div>
-      {/* Action Buttons */}
-      {(onEdit || onDelete) && (
-        <div className="px-6 pt-4 flex items-center gap-3">
-          {onEdit && (
-            <button onClick={onEdit}
-              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-sm font-medium px-4 py-2 rounded-xl transition-colors">
-              <Pencil className="w-4 h-4" /> Edit Expo
-            </button>
-          )}
-          {onDelete && (
-            <button onClick={() => {
-              if (confirm(`Are you sure you want to deactivate "${stats.expo.name}"? This will hide it from the booth login but preserve all data.`)) {
-                onDelete();
-              }
-            }}
-              className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors">
-              <Trash2 className="w-4 h-4" /> Deactivate Expo
+      {/* Status Banner for deactivated expos */}
+      {!isActive && (
+        <div className="mx-6 mt-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between">
+          <span className="text-red-400 text-sm font-medium">This expo is deactivated — booth login is disabled</span>
+          {onReactivate && (
+            <button onClick={onReactivate}
+              className="flex items-center gap-1.5 bg-green-500/15 hover:bg-green-500/25 border border-green-500/20 text-green-400 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+              Reactivate
             </button>
           )}
         </div>
       )}
+
+      {/* Action Buttons */}
+      <div className="px-6 pt-4 flex items-center gap-3">
+        {onEdit && (
+          <button onClick={onEdit}
+            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+            <Pencil className="w-4 h-4" /> Edit Expo
+          </button>
+        )}
+        {isActive && onDelete && (
+          <button onClick={() => {
+            if (confirm(`Are you sure you want to deactivate "${stats.expo.name}"? This will hide it from the booth login but preserve all data.`)) {
+              onDelete();
+            }
+          }}
+            className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+            <Trash2 className="w-4 h-4" /> Deactivate Expo
+          </button>
+        )}
+        {!isActive && onReactivate && (
+          <button onClick={onReactivate}
+            className="flex items-center gap-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+            Reactivate Expo
+          </button>
+        )}
+      </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-6 py-5">
