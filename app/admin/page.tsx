@@ -1,57 +1,43 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Lock, Download, Users, Camera, Briefcase, Star, LogOut, Eye, EyeOff, Trash2, ChevronDown, ChevronUp, RefreshCw, MessageCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, LogOut } from 'lucide-react';
+import AdminHeader from '@/components/admin/AdminHeader';
+import ExpoList from '@/components/admin/ExpoList';
+import ExpoForm from '@/components/admin/ExpoForm';
+import ExpoDetail from '@/components/admin/ExpoDetail';
+import { ExpoOverview } from '@/types';
 
-interface Row {
-  id: string;
-  created_at: string;
-  name: string;
-  organization: string;
-  email: string;
-  mobile_number: string;
-  selected_theme: string;
-  theme_type: string;
-  career_style: string;
-  transformed_photo_url: string;
-}
+type AdminView = 'login' | 'expos' | 'create-expo' | 'expo-detail';
 
 export default function AdminPage() {
+  const [view, setView] = useState<AdminView>('login');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<Row[]>([]);
-  const [deletingMobile, setDeletingMobile] = useState<string | null>(null);
-  const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
+  const [adminToken, setAdminToken] = useState('');
+  const [expos, setExpos] = useState<ExpoOverview[]>([]);
+  const [selectedExpoId, setSelectedExpoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Auto-login on page load if session exists
   useEffect(() => {
-    const saved = sessionStorage.getItem('admin_pwd');
+    const saved = sessionStorage.getItem('admin_token');
     if (saved) {
-      setPassword(saved);
-      fetchData(saved).then(rows => {
-        setData(rows);
-        setLoggedIn(true);
-      }).catch(() => {
-        sessionStorage.removeItem('admin_pwd');
-      }).finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+      setAdminToken(saved);
+      setView('expos');
+      fetchExpos();
     }
+    setLoading(false);
   }, []);
 
-  const fetchData = async (pwd: string) => {
-    const res = await fetch('/api/admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pwd }),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || 'Failed');
-    return json.data || [];
+  const fetchExpos = async () => {
+    try {
+      const res = await fetch('/api/stats/overview');
+      const data = await res.json();
+      setExpos(data.expos || []);
+    } catch { /* ignore */ }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -59,89 +45,60 @@ export default function AdminPage() {
     setLoading(true);
     setError('');
     try {
-      const rows = await fetchData(password);
-      sessionStorage.setItem('admin_pwd', password);
-      setData(rows);
-      setLoggedIn(true);
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Invalid credentials'); return; }
+      const token = data.admin.id;
+      setAdminToken(token);
+      sessionStorage.setItem('admin_token', token);
+      setView('expos');
+      await fetchExpos();
     } catch {
-      setError('Wrong password or server error. Try again.');
+      setError('Something went wrong.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleLogout = () => {
+    sessionStorage.removeItem('admin_token');
+    setAdminToken('');
+    setView('login');
+    setExpos([]);
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      const rows = await fetchData(password);
-      setData(rows);
-    } finally {
-      setRefreshing(false);
-    }
+    await fetchExpos();
+    setRefreshing(false);
   };
 
-  const downloadCSV = () => {
-    const headers = ['#', 'Date & Time', 'Name', 'Group', 'WhatsApp', 'Theme', 'Type', 'Career Style', 'Photo URL'];
-    const rows = data.map((r, i) => [
-      i + 1,
-      new Date(r.created_at).toLocaleString('en-IN'),
-      r.name,
-      r.organization || '',
-      r.mobile_number,
-      r.selected_theme,
-      r.theme_type,
-      r.career_style || '',
-      r.transformed_photo_url || '',
-    ]);
-    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `gemini-booth-leads-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleCreateExpo = async (data: {
+    name: string; venue: string; start_date: string; end_date: string;
+    username: string; password: string; groups: string[];
+  }) => {
+    const res = await fetch('/api/expos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to create expo');
+    }
+    setView('expos');
+    await fetchExpos();
   };
 
-  const handleDelete = async (mobile: string) => {
-    if (!confirm(`Delete all records for this number?`)) return;
-    setDeletingMobile(mobile);
-    try {
-      const res = await fetch('/api/admin', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, mobile }),
-      });
-      if (res.ok) setData(prev => prev.filter(r => r.mobile_number !== mobile));
-    } finally {
-      setDeletingMobile(null);
-    }
-  };
-
-  // Group rows by mobile_number — one card per unique visitor
-  const visitorMap = new Map<string, Row & { photoCount: number; photos: { url: string; theme: string; theme_type: string; created_at: string }[] }>();
-  for (const row of data) {
-    const key = row.mobile_number || row.id;
-    if (!visitorMap.has(key)) {
-      visitorMap.set(key, { ...row, photoCount: 0, photos: [] });
-    }
-    const v = visitorMap.get(key)!;
-    v.photoCount += 1;
-    if (row.transformed_photo_url && !row.transformed_photo_url.startsWith('data:')) {
-      v.photos.push({ url: row.transformed_photo_url, theme: row.selected_theme, theme_type: row.theme_type, created_at: row.created_at });
-    }
-  }
-  const visitors = Array.from(visitorMap.values()).reverse();
-  const totalPhotos = data.length;
-  const totalCareer = data.filter(r => r.theme_type === 'career').length;
-  const totalFun = data.filter(r => r.theme_type === 'fun').length;
-
-  // ── LOGIN SCREEN ──
   if (loading) {
     return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
   }
 
-  if (!loggedIn) {
+  if (view === 'login') {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
         <div className="w-full max-w-sm">
@@ -153,26 +110,23 @@ export default function AdminPage() {
               <Lock className="w-7 h-7 text-purple-400" />
             </div>
             <h1 className="text-white font-bold text-2xl">Admin Access</h1>
-            <p className="text-gray-500 text-sm mt-1">Gemini Magic Booth — Visitor Data</p>
+            <p className="text-gray-500 text-sm mt-1">Expo Management Dashboard</p>
           </div>
-
           <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <input type="email" placeholder="Admin email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 outline-none focus:border-purple-500/50" autoComplete="off" />
+            </div>
             <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Enter password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 outline-none focus:border-purple-500/50 pr-12"
-                autoComplete="off"
-              />
+              <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 outline-none focus:border-purple-500/50 pr-12" autoComplete="off" />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
             {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-            <button type="submit" disabled={loading || !password}
+            <button type="submit" disabled={loading || !email || !password}
               className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-semibold py-3 rounded-xl transition-colors">
               {loading ? 'Checking...' : 'Login'}
             </button>
@@ -182,181 +136,28 @@ export default function AdminPage() {
     );
   }
 
-  // ── DASHBOARD ──
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
-      <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="font-bold text-xl">Visitor Dashboard</h1>
-          <p className="text-gray-500 text-xs mt-0.5">Gemini Magic Booth — {visitors.length} unique visitors · {totalPhotos} total photos</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={handleRefresh} disabled={refreshing}
-            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40">
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-          <button onClick={downloadCSV}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
-            <Download className="w-4 h-4" /> Download CSV
-          </button>
-          <button onClick={() => { sessionStorage.removeItem('admin_pwd'); setLoggedIn(false); setPassword(''); setData([]); }}
-            className="flex items-center gap-2 text-gray-400 hover:text-white text-sm px-3 py-2 rounded-xl hover:bg-white/5 transition-colors">
-            <LogOut className="w-4 h-4" /> Logout
-          </button>
-        </div>
-      </header>
-
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 px-6 py-5">
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-purple-600/20 rounded-xl flex items-center justify-center">
-            <Users className="w-5 h-5 text-purple-400" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-white">{visitors.length}</div>
-            <div className="text-gray-500 text-xs">Unique Visitors</div>
-          </div>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-green-600/20 rounded-xl flex items-center justify-center">
-            <Camera className="w-5 h-5 text-green-400" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-white">{totalPhotos}</div>
-            <div className="text-gray-500 text-xs">Total Photos</div>
-          </div>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-sky-600/20 rounded-xl flex items-center justify-center">
-            <Briefcase className="w-5 h-5 text-sky-400" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-white">{totalCareer}</div>
-            <div className="text-gray-500 text-xs">Career Themes</div>
-          </div>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-violet-600/20 rounded-xl flex items-center justify-center">
-            <Star className="w-5 h-5 text-violet-400" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-white">{totalFun}</div>
-            <div className="text-gray-500 text-xs">Fun Themes</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="px-6 pb-8">
-        {visitors.length === 0 ? (
-          <div className="text-center py-20 text-gray-600">
-            <Camera className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>No visitors yet. Data will appear here after someone uses the booth.</p>
-          </div>
-        ) : (
-          <div className="border border-white/10 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/10 bg-white/5">
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">#</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">Date & Time</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">Name</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">Group</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">WhatsApp</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">Theme</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">Photos</th>
-                    <th className="text-left px-4 py-3 text-gray-400 font-semibold">Photo</th>
-                    <th className="px-4 py-3"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visitors.map((row, i) => {
-                    const phone = row.mobile_number?.replace(/\D/g, '') || '';
-                    const waPhone = phone.length === 10 ? `91${phone}` : phone;
-                    return (
-                      <>
-                        <tr key={row.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="px-4 py-3 text-gray-600">{i + 1}</td>
-                          <td className="px-4 py-3 text-gray-400 whitespace-nowrap">
-                            {new Date(row.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                          </td>
-                          <td className="px-4 py-3 text-white font-medium">{row.name}</td>
-                          <td className="px-4 py-3 text-gray-400">{row.organization || '—'}</td>
-                          <td className="px-4 py-3">
-                            {waPhone ? (
-                              <a href={`https://wa.me/${waPhone}`} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-green-400 hover:text-green-300 font-medium">
-                                <MessageCircle className="w-3.5 h-3.5" />
-                                {row.mobile_number}
-                              </a>
-                            ) : '—'}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              row.theme_type === 'career'
-                                ? 'bg-sky-500/15 text-sky-300 border border-sky-500/20'
-                                : 'bg-violet-500/15 text-violet-300 border border-violet-500/20'
-                            }`}>
-                              {row.theme_type === 'career' ? '💼' : '✨'} {row.selected_theme}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {row.photoCount > 1 ? (
-                              <button
-                                onClick={() => setExpandedMobile(expandedMobile === row.mobile_number ? null : row.mobile_number)}
-                                className="inline-flex items-center gap-1 bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 text-xs font-bold px-2 py-0.5 rounded-full transition-colors">
-                                {row.photoCount}
-                                {expandedMobile === row.mobile_number ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                              </button>
-                            ) : (
-                              <span className="text-gray-500 text-xs">1</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {row.photos.length > 0 ? (
-                              <a href={row.photos[0].url} target="_blank" rel="noopener noreferrer">
-                                <img src={row.photos[0].url} alt={row.selected_theme}
-                                  className="w-10 h-10 object-cover rounded-lg border border-white/10 hover:border-purple-400/50 transition-colors" />
-                              </a>
-                            ) : (
-                              <span className="text-gray-600 text-xs">No image</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <button onClick={() => handleDelete(row.mobile_number)} disabled={deletingMobile === row.mobile_number}
-                              className="text-gray-600 hover:text-red-400 transition-colors disabled:opacity-40" title="Delete visitor">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                        {expandedMobile === row.mobile_number && row.photos.length > 1 && (
-                          <tr key={`${row.id}-expanded`} className="bg-white/3 border-b border-white/5">
-                            <td colSpan={9} className="px-6 py-4">
-                              <p className="text-gray-500 text-xs mb-3">All photos for {row.name}</p>
-                              <div className="flex flex-wrap gap-3">
-                                {row.photos.map((photo, idx) => (
-                                  <a key={idx} href={photo.url} target="_blank" rel="noopener noreferrer" className="group">
-                                    <img src={photo.url} alt={photo.theme}
-                                      className="w-20 h-20 object-cover rounded-xl border border-white/10 group-hover:border-purple-400/50 transition-colors" />
-                                    <p className="mt-1 text-center text-xs text-gray-500">{photo.theme}</p>
-                                  </a>
-                                ))}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
+      {view === 'expos' && (
+        <>
+          <AdminHeader title="Expo Dashboard" subtitle={`${expos.length} expos total`}
+            onLogout={handleLogout} onRefresh={handleRefresh} onCreateExpo={() => setView('create-expo')} refreshing={refreshing} />
+          <ExpoList expos={expos} onSelect={(id) => { setSelectedExpoId(id); setView('expo-detail'); }} />
+        </>
+      )}
+      {view === 'create-expo' && (
+        <>
+          <AdminHeader title="Create Expo" onLogout={handleLogout} onBack={() => setView('expos')} />
+          <ExpoForm onSave={handleCreateExpo} onCancel={() => setView('expos')} />
+        </>
+      )}
+      {view === 'expo-detail' && selectedExpoId && (
+        <>
+          <AdminHeader title={expos.find(e => e.id === selectedExpoId)?.name || 'Expo Detail'}
+            onLogout={handleLogout} onBack={() => setView('expos')} />
+          <ExpoDetail expoId={selectedExpoId} adminToken={adminToken} />
+        </>
+      )}
     </div>
   );
 }
