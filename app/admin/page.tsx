@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Lock, Eye, EyeOff, LogOut } from 'lucide-react';
+import toast from 'react-hot-toast';
 import AdminHeader from '@/components/admin/AdminHeader';
 import ExpoList from '@/components/admin/ExpoList';
 import ExpoForm from '@/components/admin/ExpoForm';
@@ -91,6 +92,7 @@ export default function AdminPage() {
       const err = await res.json();
       throw new Error(err.error || 'Failed to create expo');
     }
+    toast.success('Expo created successfully!');
     setView('expos');
     await fetchExpos();
   };
@@ -161,6 +163,7 @@ export default function AdminPage() {
       end_date: data.end_date,
     } : e));
 
+    toast.success('Expo updated successfully!');
     setEditExpoData(null);
     setView('expos');
   };
@@ -169,16 +172,16 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/expos/${expoId}`, { method: 'DELETE' });
       if (res.ok) {
-        // Immediately update local state to reflect the change
         setExpos(prev => prev.map(e => e.id === expoId ? { ...e, is_active: false } : e));
+        toast.success('Expo deactivated successfully');
         setSelectedExpoId(null);
         setView('expos');
       } else {
         const err = await res.json();
-        alert('Failed to deactivate: ' + (err.error || 'Unknown error'));
+        toast.error('Failed to deactivate: ' + (err.error || 'Unknown error'));
       }
     } catch (e) {
-      alert('Error: ' + String(e));
+      toast.error('Error: ' + String(e));
     }
   };
 
@@ -191,8 +194,13 @@ export default function AdminPage() {
       });
       if (res.ok) {
         setExpos(prev => prev.map(e => e.id === expoId ? { ...e, is_active: true } : e));
+        toast.success('Expo reactivated!');
+      } else {
+        toast.error('Failed to reactivate expo');
       }
-    } catch { /* ignore */ }
+    } catch {
+      toast.error('Something went wrong');
+    }
   };
 
   if (loading) {
