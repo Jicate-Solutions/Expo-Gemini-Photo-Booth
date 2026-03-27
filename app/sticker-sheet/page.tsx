@@ -108,7 +108,7 @@ export default function PhotoPrintPage() {
         </div>
       </div>
 
-      {/* ── Print Layout — one photo per A4 page ── */}
+      {/* ── Print Layout — one photo per 4x6 page ── */}
       <div className="hidden print:block">
         {stickers.map((sticker) => (
           <div key={sticker.id} className="print-page">
@@ -121,13 +121,13 @@ export default function PhotoPrintPage() {
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
+            size: 4in 6in;
             margin: 0;
           }
           body { background: white !important; margin: 0; padding: 0; }
           .print-page {
-            width: 210mm;
-            height: 297mm;
+            width: 4in;
+            height: 6in;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -136,8 +136,8 @@ export default function PhotoPrintPage() {
             background: white;
           }
           .print-page img {
-            width: 210mm;
-            height: 297mm;
+            width: 4in;
+            height: 6in;
             object-fit: cover;
           }
         }

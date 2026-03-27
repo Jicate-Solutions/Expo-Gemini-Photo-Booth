@@ -24,6 +24,9 @@ export async function POST(req: NextRequest) {
       finalPrompt = `Edit the image as follows: ${themePrompt}. Keep the person's identity intact.`;
     }
 
+    // Enforce 4x6 portrait output (2:3 aspect ratio) for print compatibility
+    finalPrompt += ' IMPORTANT: Generate the output image in portrait orientation with a 2:3 aspect ratio (width:height), like a 4x6 inch photo print.';
+
     const base64Image = imageData.split(',')[1];
     const mimeType = (imageData.split(';')[0].split(':')[1] as string) || 'image/jpeg';
 

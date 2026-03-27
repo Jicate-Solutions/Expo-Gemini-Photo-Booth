@@ -84,16 +84,15 @@ export default function ResultScreen({
 
     doc.open();
     doc.write(`<!DOCTYPE html><html><head><style>
-      @page { margin: 0; }
+      @page { size: 4in 6in; margin: 0; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html { margin: 0; padding: 0; }
-      body { margin: -6mm; padding: 0; width: calc(100vw + 12mm); height: calc(100vh + 12mm); overflow: hidden; background: white; }
-      .frame { position: relative; width: 100%; height: 100%; overflow: hidden; }
+      html, body { margin: 0; padding: 0; width: 4in; height: 6in; overflow: hidden; background: white; }
+      .frame { position: relative; width: 4in; height: 6in; overflow: hidden; }
       .photo { display: block; width: 100%; height: 100%; object-fit: cover; }
-      .logo-box { position: absolute; width: 22%; height: 13%; background: white; padding: 5px; display: flex; align-items: center; justify-content: center; }
+      .logo-box { position: absolute; width: 20%; height: 10%; background: rgba(255,255,255,0.9); padding: 3px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
       .logo-box img { width: 100%; height: 100%; object-fit: contain; }
-      .tl { top: 9mm; left: 14mm; }
-      .br { bottom: 9mm; right: 9mm; }
+      .tl { top: 3mm; left: 3mm; }
+      .br { bottom: 3mm; right: 3mm; }
     </style></head><body>
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
@@ -131,12 +130,12 @@ export default function ResultScreen({
     <div className="h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 text-white flex flex-col overflow-hidden print:bg-white print:block">
       <style>{`
         @media print {
-          @page { size: A4 portrait; margin: 0; }
+          @page { size: 4in 6in; margin: 0; }
           body { margin: 0; padding: 0; }
           .print\\:hidden { display: none !important; }
           .result-image {
-            width: 210mm;
-            height: 297mm;
+            width: 4in;
+            height: 6in;
             object-fit: cover;
             display: block;
           }
@@ -154,8 +153,8 @@ export default function ResultScreen({
 
       <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
         {/* Image */}
-        <div className="h-[50vh] lg:h-auto lg:flex-1 overflow-hidden flex-shrink-0 relative">
-          <img src={transformedImageUrl} alt="Transformed" className="result-image w-full h-full object-cover" />
+        <div className="h-[60vh] lg:h-auto lg:flex-1 overflow-hidden flex-shrink-0 relative flex items-center justify-center bg-black">
+          <img src={transformedImageUrl} alt="Transformed" className="result-image max-w-full max-h-full object-contain" style={{ aspectRatio: '2/3' }} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
         </div>
 
