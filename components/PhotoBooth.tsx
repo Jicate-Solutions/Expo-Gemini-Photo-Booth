@@ -94,6 +94,12 @@ export default function PhotoBooth() {
     setBoothLoggedIn(false);
   };
 
+  // Reset photo flow for a new user without logging out of the booth
+  const resetForNextUser = () => {
+    setState(initialState);
+    sessionStorage.removeItem(STORAGE_KEY);
+  };
+
   const go = (screen: AppScreen, extra?: Partial<AppState>) =>
     setState((prev) => ({ ...prev, screen, ...extra }));
 
@@ -308,7 +314,7 @@ export default function PhotoBooth() {
           selectedTheme={state.selectedTheme}
           userMobile={state.userInfo?.mobile || ''}
           onTryAnotherTheme={() => go('themeSelection')}
-          onStartOver={clearSession}
+          onStartOver={resetForNextUser}
           onEdit={handleEdit}
         />
       );
@@ -317,7 +323,7 @@ export default function PhotoBooth() {
       return (
         <ErrorScreen
           message={state.errorMessage}
-          onStartOver={clearSession}
+          onStartOver={resetForNextUser}
         />
       );
 
