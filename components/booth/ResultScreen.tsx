@@ -10,6 +10,7 @@ interface ResultScreenProps {
   transformedImageUrl: string;
   selectedTheme: Theme | null;
   userMobile: string;
+  userName: string;
   onTryAnotherTheme: () => void;
   onStartOver: () => void;
   onEdit: (prompt: string, referenceImages: string[]) => void;
@@ -19,6 +20,7 @@ export default function ResultScreen({
   transformedImageUrl,
   selectedTheme,
   userMobile,
+  userName,
   onTryAnotherTheme,
   onStartOver,
   onEdit,
@@ -94,6 +96,16 @@ export default function ResultScreen({
       ctx.fill();
       ctx.drawImage(logo2, W - margin - logoW + pad, H - margin - logoH + pad, logoW - pad * 2, logoH - pad * 2);
 
+      // Bottom-left user name
+      if (userName) {
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        const nameY = H - margin - 12;
+        ctx.fillRect(margin, nameY - 32, ctx.measureText(userName).width + 20, 44);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(userName, margin + 10, nameY);
+      }
+
       // Export and download
       canvas.toBlob((blob) => {
         if (!blob) return;
@@ -147,11 +159,13 @@ export default function ResultScreen({
       .logo-box img { width: 100%; height: 100%; object-fit: contain; }
       .tl { top: 3mm; left: 3mm; }
       .br { bottom: 3mm; right: 3mm; }
+      .user-name { position: absolute; bottom: 3mm; left: 3mm; background: rgba(0,0,0,0.5); color: #fff; font: bold 10pt sans-serif; padding: 2px 8px; border-radius: 4px; }
     </style></head><body>
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
         <div class="logo-box tl"><img src="${logo1}" /></div>
         <div class="logo-box br"><img src="${logo2}" /></div>
+        ${userName ? `<div class="user-name">${userName}</div>` : ''}
       </div>
     </body></html>`);
     doc.close();
