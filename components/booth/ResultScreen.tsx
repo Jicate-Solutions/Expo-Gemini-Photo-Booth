@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle, Printer } from 'lucide-react';
+import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle, Printer, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Theme } from '@/types';
@@ -224,6 +224,14 @@ export default function ResultScreen({
             <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-pink-600 to-rose-500 group-hover:from-pink-500 group-hover:to-rose-400 rounded-[11px] px-6 py-4 transition-all">
               <RefreshCw className="w-5 h-5 text-white" />
               <span className="text-white font-semibold text-base">Try Another Theme</span>
+            </div>
+            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+          </button>
+
+          <button onClick={handleDownload} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 p-px shadow-lg hover:shadow-violet-500/30 transition-shadow">
+            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-purple-500 group-hover:from-violet-500 group-hover:to-purple-400 rounded-[11px] px-6 py-4 transition-all">
+              <Download className="w-5 h-5 text-white" />
+              <span className="text-white font-semibold text-base">Download</span>
             </div>
             <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
           </button>
