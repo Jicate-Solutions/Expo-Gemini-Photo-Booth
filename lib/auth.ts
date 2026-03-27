@@ -17,16 +17,28 @@ export function generateSessionToken(): string {
 
 export async function authenticateExpo(username: string, password: string) {
   const supabase = createClient();
-  const { data: expo } = await supabase
+  const { data: expo, error } = await supabase
     .from('expos')
     .select('id, name, venue, start_date, end_date, username, password_hash, is_active')
     .eq('username', username.toLowerCase().trim())
     .eq('is_active', true)
-    .single();
+    .maybeSingle();
 
-  if (!expo) return null;
+  if (error) {
+    console.error('Expo lookup error:', error.message, '| username:', username.toLowerCase().trim());
+    return null;
+  }
+
+  if (!expo) {
+    console.warn('No active expo found for username:', username.toLowerCase().trim());
+    return null;
+  }
+
   const valid = await verifyPassword(password, expo.password_hash);
-  if (!valid) return null;
+  if (!valid) {
+    console.warn('Password mismatch for expo:', username.toLowerCase().trim());
+    return null;
+  }
 
   const { password_hash, ...safeExpo } = expo;
   return safeExpo;
@@ -34,12 +46,17 @@ export async function authenticateExpo(username: string, password: string) {
 
 export async function authenticateAdmin(email: string, password: string) {
   const supabase = createClient();
-  const { data: admin } = await supabase
+  const { data: admin, error } = await supabase
     .from('admin_users')
     .select('id, email, display_name, password_hash, is_active')
     .eq('email', email.toLowerCase().trim())
     .eq('is_active', true)
-    .single();
+    .maybeSingle();
+
+  if (error) {
+    console.error('Admin lookup error:', error.message, '| email:', email.toLowerCase().trim());
+    return null;
+  }
 
   if (!admin) return null;
   const valid = await verifyPassword(password, admin.password_hash);
