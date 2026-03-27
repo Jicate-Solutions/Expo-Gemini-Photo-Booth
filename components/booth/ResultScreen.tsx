@@ -111,8 +111,8 @@ export default function ResultScreen({
 
         // Gradient background pill
         const grad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY);
-        grad.addColorStop(0, 'rgba(139, 92, 246, 0.85)');  // violet
-        grad.addColorStop(1, 'rgba(219, 39, 119, 0.85)');  // pink
+        grad.addColorStop(0, 'rgba(22, 163, 74, 0.9)');   // green-600
+        grad.addColorStop(1, 'rgba(34, 197, 94, 0.9)');   // green-500
         ctx.beginPath();
         ctx.roundRect(pillX, pillY, pillW, pillH, pillR);
         ctx.fillStyle = grad;
@@ -185,7 +185,7 @@ export default function ResultScreen({
       .logo-box img { width: 100%; height: 100%; object-fit: contain; }
       .tl { top: 3mm; left: 3mm; }
       .br { bottom: 3mm; right: 3mm; }
-      .user-name { position: absolute; bottom: 3mm; left: 3mm; background: linear-gradient(135deg, rgba(139,92,246,0.85), rgba(219,39,119,0.85)); color: #fff; font: 600 9pt "Segoe UI", system-ui, sans-serif; padding: 4px 14px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.3); letter-spacing: 0.5px; text-transform: uppercase; }
+      .user-name { position: absolute; bottom: 3mm; left: 3mm; background: linear-gradient(135deg, rgba(22,163,74,0.9), rgba(34,197,94,0.9)); color: #fff; font: 600 9pt "Segoe UI", system-ui, sans-serif; padding: 4px 14px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.3); letter-spacing: 0.5px; text-transform: uppercase; }
     </style></head><body>
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
