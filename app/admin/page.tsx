@@ -4,12 +4,19 @@ import { useState, useEffect } from 'react';
 import { Lock, Eye, EyeOff, LogOut } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminHeader from '@/components/admin/AdminHeader';
+import StatsOverview from '@/components/admin/StatsOverview';
 import ExpoList from '@/components/admin/ExpoList';
 import ExpoForm from '@/components/admin/ExpoForm';
 import ExpoDetail from '@/components/admin/ExpoDetail';
 import { ExpoOverview } from '@/types';
 
 type AdminView = 'login' | 'expos' | 'create-expo' | 'edit-expo' | 'expo-detail';
+
+interface Totals {
+  total_expos: number;
+  total_photos: number;
+  total_visitors: number;
+}
 
 export default function AdminPage() {
   const [view, setView] = useState<AdminView>('login');
@@ -19,15 +26,19 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [adminToken, setAdminToken] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
   const [expos, setExpos] = useState<ExpoOverview[]>([]);
+  const [totals, setTotals] = useState<Totals>({ total_expos: 0, total_photos: 0, total_visitors: 0 });
   const [selectedExpoId, setSelectedExpoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [editExpoData, setEditExpoData] = useState<{ id: string; name: string; venue: string | null; start_date: string; end_date: string; username: string; groups: { id: string; name: string }[] } | null>(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem('admin_token');
+    const savedEmail = sessionStorage.getItem('admin_email');
     if (saved) {
       setAdminToken(saved);
+      if (savedEmail) setAdminEmail(savedEmail);
       setView('expos');
       fetchExpos();
     }
@@ -39,6 +50,7 @@ export default function AdminPage() {
       const res = await fetch(`/api/stats/overview?t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       setExpos(data.expos || []);
+      if (data.totals) setTotals(data.totals);
     } catch { /* ignore */ }
   };
 
@@ -56,7 +68,9 @@ export default function AdminPage() {
       if (!res.ok) { setError(data.error || 'Invalid credentials'); return; }
       const token = data.admin.id;
       setAdminToken(token);
+      setAdminEmail(email);
       sessionStorage.setItem('admin_token', token);
+      sessionStorage.setItem('admin_email', email);
       setView('expos');
       await fetchExpos();
     } catch {
@@ -68,9 +82,12 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('admin_token');
+    sessionStorage.removeItem('admin_email');
     setAdminToken('');
+    setAdminEmail('');
     setView('login');
     setExpos([]);
+    setTotals({ total_expos: 0, total_photos: 0, total_visitors: 0 });
   };
 
   const handleRefresh = async () => {
@@ -114,7 +131,6 @@ export default function AdminPage() {
   }) => {
     if (!editExpoData) return;
 
-    // Update expo details
     const updateBody: Record<string, unknown> = {
       name: data.name,
       venue: data.venue,
@@ -133,7 +149,6 @@ export default function AdminPage() {
       throw new Error(err.error || 'Failed to update expo');
     }
 
-    // Sync groups: add any new ones
     const existingNames = editExpoData.groups.map(g => g.name);
     const newGroups = data.groups.filter(g => !existingNames.includes(g));
     if (newGroups.length > 0) {
@@ -144,7 +159,6 @@ export default function AdminPage() {
       });
     }
 
-    // Remove groups that were deleted
     const removedGroups = editExpoData.groups.filter(g => !data.groups.includes(g.name));
     for (const g of removedGroups) {
       await fetch(`/api/expos/${editExpoData.id}/groups`, {
@@ -154,7 +168,6 @@ export default function AdminPage() {
       });
     }
 
-    // Immediately update local state so UI reflects changes instantly
     setExpos(prev => prev.map(e => e.id === editExpoData.id ? {
       ...e,
       name: data.name,
@@ -203,6 +216,10 @@ export default function AdminPage() {
     }
   };
 
+  // Derived stats
+  const activeExpos = expos.filter(e => e.is_active).length;
+  const totalGroups = expos.reduce((sum, e) => sum + (e.group_count || 0), 0);
+
   if (loading) {
     return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
   }
@@ -249,27 +266,46 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       {view === 'expos' && (
         <>
-          <AdminHeader title="Expo Dashboard" subtitle={`${expos.length} expos total`}
-            onLogout={handleLogout} onRefresh={handleRefresh} onCreateExpo={() => setView('create-expo')} refreshing={refreshing} />
+          <AdminHeader
+            title="Expo Dashboard"
+            subtitle={`${activeExpos} active of ${expos.length} expos`}
+            adminEmail={adminEmail}
+            onLogout={handleLogout}
+            onRefresh={handleRefresh}
+            onCreateExpo={() => setView('create-expo')}
+            refreshing={refreshing}
+          />
+          <div className="px-6 pt-5 pb-2">
+            <StatsOverview
+              totalExpos={totals.total_expos}
+              activeExpos={activeExpos}
+              totalVisitors={totals.total_visitors}
+              totalPhotos={totals.total_photos}
+              totalGroups={totalGroups}
+            />
+          </div>
+          <div className="px-6 pt-4 pb-2">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">All Expos</h2>
+          </div>
           <ExpoList expos={expos} onSelect={(id) => { setSelectedExpoId(id); setView('expo-detail'); }} onReactivate={handleReactivateExpo} />
         </>
       )}
       {view === 'create-expo' && (
         <>
-          <AdminHeader title="Create Expo" onLogout={handleLogout} onBack={() => setView('expos')} />
+          <AdminHeader title="Create Expo" adminEmail={adminEmail} onLogout={handleLogout} onBack={() => setView('expos')} />
           <ExpoForm onSave={handleCreateExpo} onCancel={() => setView('expos')} />
         </>
       )}
       {view === 'edit-expo' && editExpoData && (
         <>
-          <AdminHeader title={`Edit: ${editExpoData.name}`} onLogout={handleLogout} onBack={() => { setEditExpoData(null); setView('expo-detail'); }} />
+          <AdminHeader title={`Edit: ${editExpoData.name}`} adminEmail={adminEmail} onLogout={handleLogout} onBack={() => { setEditExpoData(null); setView('expo-detail'); }} />
           <ExpoForm onSave={handleUpdateExpo} onCancel={() => { setEditExpoData(null); setView('expo-detail'); }} initialData={editExpoData} />
         </>
       )}
       {view === 'expo-detail' && selectedExpoId && (
         <>
           <AdminHeader title={expos.find(e => e.id === selectedExpoId)?.name || 'Expo Detail'}
-            onLogout={handleLogout} onBack={() => setView('expos')} />
+            adminEmail={adminEmail} onLogout={handleLogout} onBack={() => setView('expos')} />
           <ExpoDetail
             expoId={selectedExpoId}
             adminToken={adminToken}
