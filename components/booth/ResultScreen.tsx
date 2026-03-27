@@ -96,14 +96,40 @@ export default function ResultScreen({
       ctx.fill();
       ctx.drawImage(logo2, W - margin - logoW + pad, H - margin - logoH + pad, logoW - pad * 2, logoH - pad * 2);
 
-      // Bottom-left user name
+      // Bottom-left user name — stylish frosted pill
       if (userName) {
-        ctx.font = 'bold 36px sans-serif';
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        const nameY = H - margin - 12;
-        ctx.fillRect(margin, nameY - 32, ctx.measureText(userName).width + 20, 44);
+        const fontSize = 34;
+        ctx.font = `600 ${fontSize}px "Segoe UI", system-ui, sans-serif`;
+        const starText = '✦ ';
+        const starW = ctx.measureText(starText).width;
+        const nameW = ctx.measureText(userName.toUpperCase()).width;
+        const pillW = starW + nameW + 40;
+        const pillH = 52;
+        const pillX = margin;
+        const pillY = H - margin - pillH;
+        const pillR = pillH / 2;
+
+        // Gradient background pill
+        const grad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY);
+        grad.addColorStop(0, 'rgba(139, 92, 246, 0.85)');  // violet
+        grad.addColorStop(1, 'rgba(219, 39, 119, 0.85)');  // pink
+        ctx.beginPath();
+        ctx.roundRect(pillX, pillY, pillW, pillH, pillR);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Subtle inner border
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Star icon
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillText(starText, pillX + 16, pillY + pillH - 14);
+
+        // User name text
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(userName, margin + 10, nameY);
+        ctx.fillText(userName.toUpperCase(), pillX + 16 + starW, pillY + pillH - 14);
       }
 
       // Export and download
@@ -159,13 +185,13 @@ export default function ResultScreen({
       .logo-box img { width: 100%; height: 100%; object-fit: contain; }
       .tl { top: 3mm; left: 3mm; }
       .br { bottom: 3mm; right: 3mm; }
-      .user-name { position: absolute; bottom: 3mm; left: 3mm; background: rgba(0,0,0,0.5); color: #fff; font: bold 10pt sans-serif; padding: 2px 8px; border-radius: 4px; }
+      .user-name { position: absolute; bottom: 3mm; left: 3mm; background: linear-gradient(135deg, rgba(139,92,246,0.85), rgba(219,39,119,0.85)); color: #fff; font: 600 9pt "Segoe UI", system-ui, sans-serif; padding: 4px 14px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.3); letter-spacing: 0.5px; text-transform: uppercase; }
     </style></head><body>
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
         <div class="logo-box tl"><img src="${logo1}" /></div>
         <div class="logo-box br"><img src="${logo2}" /></div>
-        ${userName ? `<div class="user-name">${userName}</div>` : ''}
+        ${userName ? `<div class="user-name">✦ ${userName}</div>` : ''}
       </div>
     </body></html>`);
     doc.close();
