@@ -253,9 +253,17 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
             </button>
           </form>
 
-          <p className="text-gray-700 text-xs mt-6 text-center">
-            Authorised personnel only · Jicate Solutions
-          </p>
+          <div className="text-center mt-6 space-y-2">
+            <p className="text-gray-700 text-xs">
+              Authorised personnel only · Jicate Solutions
+            </p>
+            <a
+              href="/admin"
+              className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-purple-400 transition-colors"
+            >
+              Admin Login →
+            </a>
+          </div>
         </div>
       </div>
 
