@@ -42,14 +42,68 @@ export default function ResultScreen({
 
   const handleDownload = async () => {
     try {
-      const res = await fetch(transformedImageUrl);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `gemini-magic-booth-${selectedTheme?.id || 'custom'}.jpg`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const origin = window.location.origin;
+
+      // Load the main photo and both logos in parallel
+      const loadImg = (src: string): Promise<HTMLImageElement> =>
+        new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+
+      const [photo, logo1, logo2] = await Promise.all([
+        loadImg(transformedImageUrl),
+        loadImg(`${origin}/jkkn-logo.png`),
+        loadImg(`${origin}/jkkn-100-logo.png`),
+      ]);
+
+      // 4x6 inch at 300 DPI = 1200x1800 px
+      const W = 1200;
+      const H = 1800;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d')!;
+
+      // Draw photo (cover the entire canvas)
+      const scale = Math.max(W / photo.width, H / photo.height);
+      const sw = photo.width * scale;
+      const sh = photo.height * scale;
+      ctx.drawImage(photo, (W - sw) / 2, (H - sh) / 2, sw, sh);
+
+      // Logo boxes: 20% width, 10% height with white background
+      const logoW = W * 0.2;
+      const logoH = H * 0.1;
+      const margin = W * 0.025; // ~3mm at print scale
+
+      // Top-left logo
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath();
+      ctx.roundRect(margin, margin, logoW, logoH, 6);
+      ctx.fill();
+      const pad = 4;
+      ctx.drawImage(logo1, margin + pad, margin + pad, logoW - pad * 2, logoH - pad * 2);
+
+      // Bottom-right logo
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath();
+      ctx.roundRect(W - margin - logoW, H - margin - logoH, logoW, logoH, 6);
+      ctx.fill();
+      ctx.drawImage(logo2, W - margin - logoW + pad, H - margin - logoH + pad, logoW - pad * 2, logoH - pad * 2);
+
+      // Export and download
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gemini-magic-booth-${selectedTheme?.id || 'custom'}.jpg`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/jpeg', 0.95);
     } catch {
       window.open(transformedImageUrl, '_blank');
     }
