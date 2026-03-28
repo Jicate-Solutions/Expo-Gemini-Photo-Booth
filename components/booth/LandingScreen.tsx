@@ -74,7 +74,7 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
     <div className="min-h-screen bg-gray-950 text-white overflow-hidden relative">
 
       {expoName && (
-        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-black/50 backdrop-blur-sm border-b border-white/10">
+        <div className="relative z-30 flex items-center justify-between px-4 py-2 bg-black/50 backdrop-blur-sm border-b border-white/10">
           <span className="text-xs text-purple-300 font-medium truncate">
             Active: {expoName}
           </span>
