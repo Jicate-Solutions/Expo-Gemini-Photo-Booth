@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Wand2, Eye, EyeOff, Sparkles, Camera, Zap, Star } from 'lucide-react';
+import { Wand2, Eye, EyeOff, Sparkles, Camera, Zap, Star, Download, Share } from 'lucide-react';
 import { BoothSession } from '@/types';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface BoothLoginScreenProps {
   onLogin: (session: BoothSession) => void;
@@ -29,6 +30,7 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { canInstall, showIOSGuide, isStandalone, promptInstall } = usePWAInstall();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,7 +255,7 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
             </button>
           </form>
 
-          <div className="text-center mt-6 space-y-2">
+          <div className="text-center mt-6 space-y-3">
             <p className="text-gray-700 text-xs">
               Authorised personnel only · Jicate Solutions
             </p>
@@ -263,6 +265,25 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
             >
               Admin Login →
             </a>
+
+            {/* PWA Install Button */}
+            {canInstall && (
+              <button
+                onClick={promptInstall}
+                className="flex items-center justify-center gap-2 w-full mt-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-purple-500/10 hover:border-purple-500/30 transition-all group"
+              >
+                <Download className="w-4 h-4 text-purple-400 group-hover:text-purple-300" />
+                <span className="text-xs text-gray-400 group-hover:text-purple-300 font-medium">Install App for Fullscreen Mode</span>
+              </button>
+            )}
+            {showIOSGuide && !isStandalone && (
+              <div className="flex items-center justify-center gap-2 w-full mt-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10">
+                <Share className="w-4 h-4 text-purple-400" />
+                <span className="text-xs text-gray-400">
+                  Tap <Share className="w-3 h-3 inline" /> then <strong className="text-gray-300">&quot;Add to Home Screen&quot;</strong>
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
