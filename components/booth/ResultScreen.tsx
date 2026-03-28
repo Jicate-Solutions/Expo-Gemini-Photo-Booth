@@ -30,38 +30,45 @@ export default function ResultScreen({
   const [showEdit, setShowEdit] = useState(false);
   const editFileRef = useRef<HTMLInputElement>(null);
 
-  // Clean phone number and build WhatsApp URL (fallback for desktop)
+  // Clean phone number for WhatsApp
   const cleanPhone = userMobile.replace(/\D/g, '');
   const whatsappPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
   const isPublicUrl = transformedImageUrl && !transformedImageUrl.startsWith('data:');
   const whatsappMessage = isPublicUrl
     ? `Here is your AI transformed photo from Gemini Magic Booth! 🎉\n\n${transformedImageUrl}`
     : `Thank you for visiting Gemini Magic Booth! 🎉`;
-  const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`;
 
   const handleWhatsAppShare = async () => {
-    try {
-      // Try Web Share API to send the actual image file
-      if (navigator.share && navigator.canShare) {
-        const response = await fetch(transformedImageUrl);
-        const blob = await response.blob();
-        const file = new File([blob], `magic-booth-${selectedTheme?.id || 'photo'}.jpg`, { type: 'image/jpeg' });
+    // Detect mobile vs desktop
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: 'Gemini Magic Booth',
-            text: 'Check out my AI transformed photo! 🎉',
-            files: [file],
-          });
-          return;
+    if (isMobile) {
+      // Mobile: try Web Share API to send actual image file
+      try {
+        if (navigator.share && navigator.canShare) {
+          const response = await fetch(transformedImageUrl);
+          const blob = await response.blob();
+          const file = new File([blob], `magic-booth-${selectedTheme?.id || 'photo'}.jpg`, { type: 'image/jpeg' });
+
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: 'Gemini Magic Booth',
+              text: 'Check out my AI transformed photo! 🎉',
+              files: [file],
+            });
+            return;
+          }
         }
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
       }
-    } catch (err: any) {
-      // User cancelled share or share failed — fall back
-      if (err?.name === 'AbortError') return;
+      // Mobile fallback: open WhatsApp app via wa.me
+      window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+    } else {
+      // Desktop: open WhatsApp Web directly with the image URL
+      const webUrl = `https://web.whatsapp.com/send?phone=${whatsappPhone}&text=${encodeURIComponent(whatsappMessage)}`;
+      window.open(webUrl, '_blank');
     }
-    // Fallback: open wa.me link
-    window.open(whatsappUrl, '_blank');
   };
 
   const handleDownload = async () => {
