@@ -240,9 +240,9 @@ export default function ResultScreen({
           <h1 className="font-bold text-lg">✨ Your Transformation</h1>
           {selectedTheme && <p className="text-gray-400 text-xs">{selectedTheme.title}</p>}
         </div>
-        <Button variant="ghost" size="sm" onClick={onStartOver} className="text-gray-400 gap-1">
+        <button onClick={onStartOver} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600/90 hover:bg-red-500 text-white font-semibold text-sm transition-colors shadow-md">
           <RotateCcw className="w-4 h-4" /> Start Over
-        </Button>
+        </button>
       </header>
 
       <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
@@ -335,6 +335,15 @@ export default function ResultScreen({
               <Printer className="w-5 h-5 text-white" />
               <span className="text-white font-semibold text-base">Print</span>
             </div>
+          </button>
+
+          {/* Prominent Start Over — always visible at bottom */}
+          <button onClick={onStartOver} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-red-600 to-orange-500 p-px shadow-lg hover:shadow-red-500/30 transition-shadow mt-2">
+            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-orange-500 group-hover:from-red-500 group-hover:to-orange-400 rounded-[11px] px-6 py-4 transition-all">
+              <RotateCcw className="w-5 h-5 text-white" />
+              <span className="text-white font-semibold text-base">Start Over</span>
+            </div>
+            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
           </button>
 
         </div>
