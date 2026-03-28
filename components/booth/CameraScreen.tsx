@@ -16,6 +16,7 @@ export default function CameraScreen({ onCapture, onBack }: CameraScreenProps) {
   const [mirrored, setMirrored] = useState(true);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [cameraReady, setCameraReady] = useState(false);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -25,13 +26,38 @@ export default function CameraScreen({ onCapture, onBack }: CameraScreenProps) {
 
   const startCamera = async () => {
     try {
-      const s = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
+      // Check if mediaDevices is available (may be blocked in insecure contexts)
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('Camera not available. Please use HTTPS or a supported browser.');
+        return;
+      }
+
+      // Try front camera first, fall back to any camera
+      let s: MediaStream;
+      try {
+        s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        });
+      } catch {
+        // Fallback: try without facingMode constraint
+        s = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+
       setStream(s);
-      if (videoRef.current) videoRef.current.srcObject = s;
-    } catch {
-      setError('Could not access camera. Please allow camera permission.');
+      if (videoRef.current) {
+        videoRef.current.srcObject = s;
+        // Ensure video plays in PWA standalone mode
+        try { await videoRef.current.play(); } catch {}
+      }
+      setCameraReady(true);
+    } catch (err: any) {
+      if (err?.name === 'NotAllowedError') {
+        setError('Camera permission denied. Please allow camera access in your browser/device settings and reload.');
+      } else if (err?.name === 'NotFoundError') {
+        setError('No camera found on this device.');
+      } else {
+        setError('Could not access camera. Please allow camera permission and reload.');
+      }
     }
   };
 
@@ -90,7 +116,12 @@ export default function CameraScreen({ onCapture, onBack }: CameraScreenProps) {
           <div className="text-center bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-10">
             <X className="w-12 h-12 text-red-400 mx-auto mb-4" />
             <p className="text-red-400 mb-4">{error}</p>
-            <Button onClick={onBack} variant="outline">Go Back</Button>
+            <div className="flex items-center justify-center gap-3">
+              <Button onClick={() => { setError(''); startCamera(); }} variant="outline" className="gap-2">
+                <Camera className="w-4 h-4" /> Retry
+              </Button>
+              <Button onClick={onBack} variant="outline">Go Back</Button>
+            </div>
           </div>
         ) : (
           <div className="relative w-full max-w-2xl">
