@@ -36,18 +36,24 @@ export function usePWAInstall() {
   }, []);
 
   async function promptInstall() {
-    if (!deferredPrompt) return false;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsInstalled(true);
-      setDeferredPrompt(null);
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsInstalled(true);
+        setDeferredPrompt(null);
+      }
+      return outcome === 'accepted';
     }
-    return outcome === 'accepted';
+    // No deferred prompt available — guide user to browser install option
+    return false;
   }
 
   const canInstall = !isStandalone && !isInstalled && !!deferredPrompt;
   const showIOSGuide = !isStandalone && !isInstalled && isIOS && !deferredPrompt;
+  // Show install button whenever app is not running as standalone PWA
+  const showInstallButton = !isStandalone && !isInstalled;
+  const hasNativePrompt = !!deferredPrompt;
 
-  return { canInstall, showIOSGuide, isStandalone, isInstalled, promptInstall };
+  return { canInstall, showIOSGuide, showInstallButton, hasNativePrompt, isStandalone, isInstalled, isIOS, promptInstall };
 }

@@ -17,7 +17,7 @@ interface LandingScreenProps {
 
 export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, expoName, onShowStats }: LandingScreenProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { canInstall, promptInstall } = usePWAInstall();
+  const { showInstallButton, hasNativePrompt, isIOS, promptInstall } = usePWAInstall();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,9 +113,17 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
             <Sparkles className="w-3 h-3" />
             150+ Themes · AI-Powered
           </div>
-          {canInstall && (
+          {showInstallButton && (
             <button
-              onClick={promptInstall}
+              onClick={() => {
+                if (hasNativePrompt) {
+                  promptInstall();
+                } else if (isIOS) {
+                  alert('To install: tap the Share button (⎋) then "Add to Home Screen"');
+                } else {
+                  alert('To install: click the install icon (⊕) in your browser\'s address bar');
+                }
+              }}
               className="flex items-center gap-1.5 text-purple-300 hover:text-white text-xs transition-colors px-2.5 py-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 hover:border-purple-500/40"
             >
               <Download className="w-3.5 h-3.5" />

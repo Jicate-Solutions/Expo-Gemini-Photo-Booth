@@ -30,7 +30,7 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { canInstall, showIOSGuide, isStandalone, promptInstall } = usePWAInstall();
+  const { showInstallButton, hasNativePrompt, isIOS, isStandalone, promptInstall } = usePWAInstall();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,22 +267,22 @@ export default function BoothLoginScreen({ onLogin }: BoothLoginScreenProps) {
             </a>
 
             {/* PWA Install Button */}
-            {canInstall && (
+            {showInstallButton && (
               <button
-                onClick={promptInstall}
+                onClick={() => {
+                  if (hasNativePrompt) {
+                    promptInstall();
+                  } else if (isIOS) {
+                    alert('To install: tap the Share button (⎋) then "Add to Home Screen"');
+                  } else {
+                    alert('To install: click the install icon (⊕) in your browser\'s address bar');
+                  }
+                }}
                 className="flex items-center justify-center gap-2 w-full mt-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-purple-500/10 hover:border-purple-500/30 transition-all group"
               >
                 <Download className="w-4 h-4 text-purple-400 group-hover:text-purple-300" />
                 <span className="text-xs text-gray-400 group-hover:text-purple-300 font-medium">Install App for Fullscreen Mode</span>
               </button>
-            )}
-            {showIOSGuide && !isStandalone && (
-              <div className="flex items-center justify-center gap-2 w-full mt-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10">
-                <Share className="w-4 h-4 text-purple-400" />
-                <span className="text-xs text-gray-400">
-                  Tap <Share className="w-3 h-3 inline" /> then <strong className="text-gray-300">&quot;Add to Home Screen&quot;</strong>
-                </span>
-              </div>
             )}
           </div>
         </div>
