@@ -30,17 +30,39 @@ export default function ResultScreen({
   const [showEdit, setShowEdit] = useState(false);
   const editFileRef = useRef<HTMLInputElement>(null);
 
-  // Clean phone number and build WhatsApp URL
+  // Clean phone number and build WhatsApp URL (fallback for desktop)
   const cleanPhone = userMobile.replace(/\D/g, '');
-  // Always use 91 (India) as default — skip if number already starts with 91
   const whatsappPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
-  // Include image URL in message if it's a public URL (not base64)
   const isPublicUrl = transformedImageUrl && !transformedImageUrl.startsWith('data:');
-  const uploadError = null;
   const whatsappMessage = isPublicUrl
     ? `Here is your AI transformed photo from Gemini Magic Booth! 🎉\n\n${transformedImageUrl}`
     : `Thank you for visiting Gemini Magic Booth! 🎉`;
   const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`;
+
+  const handleWhatsAppShare = async () => {
+    try {
+      // Try Web Share API to send the actual image file
+      if (navigator.share && navigator.canShare) {
+        const response = await fetch(transformedImageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `magic-booth-${selectedTheme?.id || 'photo'}.jpg`, { type: 'image/jpeg' });
+
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'Gemini Magic Booth',
+            text: 'Check out my AI transformed photo! 🎉',
+            files: [file],
+          });
+          return;
+        }
+      }
+    } catch (err: any) {
+      // User cancelled share or share failed — fall back
+      if (err?.name === 'AbortError') return;
+    }
+    // Fallback: open wa.me link
+    window.open(whatsappUrl, '_blank');
+  };
 
   const handleDownload = async () => {
     try {
@@ -255,16 +277,14 @@ export default function ResultScreen({
         {/* Actions */}
         <div className="print:hidden lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-4 lg:p-6 flex flex-col gap-3 lg:gap-4 overflow-y-auto bg-gray-950/80 backdrop-blur-sm">
 
-          {/* WhatsApp Button */}
-          {cleanPhone && (
-            <button onClick={() => window.open(whatsappUrl, '_blank')} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 p-px shadow-lg hover:shadow-green-500/30 transition-shadow">
-              <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-500 group-hover:from-green-500 group-hover:to-emerald-400 rounded-[11px] px-6 py-4 transition-all">
-                <MessageCircle className="w-5 h-5 text-white" />
-                <span className="text-white font-semibold text-base">Send via WhatsApp</span>
-              </div>
-              <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
-            </button>
-          )}
+          {/* Share / WhatsApp Button */}
+          <button onClick={handleWhatsAppShare} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 p-px shadow-lg hover:shadow-green-500/30 transition-shadow">
+            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-500 group-hover:from-green-500 group-hover:to-emerald-400 rounded-[11px] px-6 py-4 transition-all">
+              <MessageCircle className="w-5 h-5 text-white" />
+              <span className="text-white font-semibold text-base">Share via WhatsApp</span>
+            </div>
+            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+          </button>
 
           <button onClick={() => setShowEdit(!showEdit)} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 p-px shadow-lg hover:shadow-blue-500/30 transition-shadow">
             <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 group-hover:from-blue-500 group-hover:to-cyan-400 rounded-[11px] px-6 py-4 transition-all">
