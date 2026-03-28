@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef } from 'react';
-import { Camera, Sparkles, Wand2, Briefcase, Star, Lock, LogOut } from 'lucide-react';
+import { Camera, Sparkles, Wand2, Briefcase, Star, Lock, LogOut, Download } from 'lucide-react';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Button } from '@/components/ui/button';
 import { funThemes } from '@/lib/themes';
 import { careerThemes } from '@/lib/career-themes';
@@ -16,6 +17,7 @@ interface LandingScreenProps {
 
 export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, expoName, onShowStats }: LandingScreenProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { canInstall, promptInstall } = usePWAInstall();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,6 +113,15 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
             <Sparkles className="w-3 h-3" />
             150+ Themes · AI-Powered
           </div>
+          {canInstall && (
+            <button
+              onClick={promptInstall}
+              className="flex items-center gap-1.5 text-purple-300 hover:text-white text-xs transition-colors px-2.5 py-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 hover:border-purple-500/40"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Install App</span>
+            </button>
+          )}
           <button
             onClick={onLogout}
             className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10"
