@@ -38,36 +38,23 @@ export default function ResultScreen({
     ? `Here is your AI transformed photo from Gemini Magic Booth! 🎉\n\n${transformedImageUrl}`
     : `Thank you for visiting Gemini Magic Booth! 🎉`;
 
-  const handleWhatsAppShare = async () => {
-    // Detect mobile vs desktop
+  const handleWhatsAppShare = () => {
+    // Validate: Indian mobile numbers must be 10 digits
+    const digits = userMobile.replace(/\D/g, '');
+    const localDigits = digits.startsWith('91') ? digits.slice(2) : digits;
+    if (localDigits.length !== 10) {
+      alert('Invalid mobile number. Cannot open WhatsApp.');
+      return;
+    }
+
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     if (isMobile) {
-      // Mobile: try Web Share API to send actual image file
-      try {
-        if (navigator.share && navigator.canShare) {
-          const response = await fetch(transformedImageUrl);
-          const blob = await response.blob();
-          const file = new File([blob], `magic-booth-${selectedTheme?.id || 'photo'}.jpg`, { type: 'image/jpeg' });
-
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              title: 'Gemini Magic Booth',
-              text: 'Check out my AI transformed photo! 🎉',
-              files: [file],
-            });
-            return;
-          }
-        }
-      } catch (err: any) {
-        if (err?.name === 'AbortError') return;
-      }
-      // Mobile fallback: open WhatsApp app via wa.me
+      // Mobile: open WhatsApp app directly to the user's number with image URL in message
       window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
     } else {
-      // Desktop: open WhatsApp Web directly with the image URL
-      const webUrl = `https://web.whatsapp.com/send?phone=${whatsappPhone}&text=${encodeURIComponent(whatsappMessage)}`;
-      window.open(webUrl, '_blank');
+      // Desktop: open WhatsApp Web directly to the user's number
+      window.open(`https://web.whatsapp.com/send?phone=${whatsappPhone}&text=${encodeURIComponent(whatsappMessage)}`, '_blank');
     }
   };
 
@@ -285,20 +272,14 @@ export default function ResultScreen({
         <div className="print:hidden lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-4 lg:p-6 flex flex-col gap-3 lg:gap-4 overflow-y-auto bg-gray-950/80 backdrop-blur-sm">
 
           {/* Share / WhatsApp Button */}
-          <button onClick={handleWhatsAppShare} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 p-px shadow-lg hover:shadow-green-500/30 transition-shadow">
-            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-500 group-hover:from-green-500 group-hover:to-emerald-400 rounded-[11px] px-6 py-4 transition-all">
-              <MessageCircle className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold text-base">Share via WhatsApp</span>
-            </div>
-            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+          <button onClick={handleWhatsAppShare} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 px-6 py-4 shadow-lg transition-all">
+            <MessageCircle className="w-5 h-5 text-white shrink-0" />
+            <span className="text-white font-semibold text-base">Share via WhatsApp</span>
           </button>
 
-          <button onClick={() => setShowEdit(!showEdit)} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 p-px shadow-lg hover:shadow-blue-500/30 transition-shadow">
-            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 group-hover:from-blue-500 group-hover:to-cyan-400 rounded-[11px] px-6 py-4 transition-all">
-              <Wand2 className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold text-base">Edit with AI</span>
-            </div>
-            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+          <button onClick={() => setShowEdit(!showEdit)} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 px-6 py-4 shadow-lg transition-all">
+            <Wand2 className="w-5 h-5 text-white shrink-0" />
+            <span className="text-white font-semibold text-base">Edit with AI</span>
           </button>
 
           {showEdit && (
@@ -341,36 +322,25 @@ export default function ResultScreen({
             </div>
           )}
 
-          <button onClick={onTryAnotherTheme} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 p-px shadow-lg hover:shadow-pink-500/30 transition-shadow">
-            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-pink-600 to-rose-500 group-hover:from-pink-500 group-hover:to-rose-400 rounded-[11px] px-6 py-4 transition-all">
-              <RefreshCw className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold text-base">Try Another Theme</span>
-            </div>
-            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+          <button onClick={onTryAnotherTheme} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 px-6 py-4 shadow-lg transition-all">
+            <RefreshCw className="w-5 h-5 text-white shrink-0" />
+            <span className="text-white font-semibold text-base">Try Another Theme</span>
           </button>
 
-          <button onClick={handleDownload} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 p-px shadow-lg hover:shadow-violet-500/30 transition-shadow">
-            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-purple-500 group-hover:from-violet-500 group-hover:to-purple-400 rounded-[11px] px-6 py-4 transition-all">
-              <Download className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold text-base">Download</span>
-            </div>
-            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+          <button onClick={handleDownload} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-500 hover:to-purple-400 px-6 py-4 shadow-lg transition-all">
+            <Download className="w-5 h-5 text-white shrink-0" />
+            <span className="text-white font-semibold text-base">Download</span>
           </button>
 
-          <button onClick={handlePrint} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 p-px hover:shadow-gray-500/20 transition-shadow">
-            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-gray-700 to-gray-600 group-hover:from-gray-600 group-hover:to-gray-500 rounded-[11px] px-6 py-4 transition-all">
-              <Printer className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold text-base">Print</span>
-            </div>
+          <button onClick={handlePrint} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 px-6 py-4 transition-all">
+            <Printer className="w-5 h-5 text-white shrink-0" />
+            <span className="text-white font-semibold text-base">Print</span>
           </button>
 
           {/* Prominent Start Over — always visible at bottom */}
-          <button onClick={onStartOver} className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-red-600 to-orange-500 p-px shadow-lg hover:shadow-red-500/30 transition-shadow mt-2">
-            <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-orange-500 group-hover:from-red-500 group-hover:to-orange-400 rounded-[11px] px-6 py-4 transition-all">
-              <RotateCcw className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold text-base">Start Over</span>
-            </div>
-            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+          <button onClick={onStartOver} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 px-6 py-4 shadow-lg transition-all mt-2">
+            <RotateCcw className="w-5 h-5 text-white shrink-0" />
+            <span className="text-white font-semibold text-base">Start Over</span>
           </button>
 
         </div>

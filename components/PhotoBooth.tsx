@@ -67,15 +67,21 @@ export default function PhotoBooth() {
   }, []);
 
   // Save state to sessionStorage on every change
+  // Always strip large base64 fields (capturedPhoto, referenceImages) to avoid quota overflow.
+  // transformedImageUrl is a Supabase public URL (small) so it persists fine.
   useEffect(() => {
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      const { capturedPhoto, ...rest } = state;
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...rest, capturedPhoto: null }));
-      } catch { /* ignore */ }
-    }
+      const { capturedPhoto, referenceImages, transformedImageUrl, ...rest } = state;
+      const urlToSave = transformedImageUrl?.startsWith('data:') ? null : transformedImageUrl;
+      const screenToSave = (!urlToSave && rest.screen === 'result') ? 'landing' : rest.screen;
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ...rest,
+        screen: screenToSave,
+        capturedPhoto: null,
+        referenceImages: [],
+        transformedImageUrl: urlToSave,
+      }));
+    } catch { /* ignore */ }
   }, [state]);
 
   const handleBoothLogin = (sessionData: BoothSession) => {
