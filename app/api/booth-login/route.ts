@@ -17,6 +17,8 @@ export async function POST(req: NextRequest) {
 
     const sessionToken = generateSessionToken();
 
+    const metadata = expo.metadata as Record<string, unknown> | null;
+
     return NextResponse.json({
       success: true,
       session: {
@@ -25,6 +27,7 @@ export async function POST(req: NextRequest) {
         expoName: expo.name,
         username: expo.username,
         sessionToken,
+        expoMode: (metadata?.mode as string) || 'standard',
       },
     });
   } catch (e) {

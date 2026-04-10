@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, venue, start_date, end_date, username, password, groups } = body;
+    const { name, venue, start_date, end_date, username, password, groups, mode } = body;
 
     if (!name || !start_date || !end_date || !username || !password) {
       return NextResponse.json(
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
         username: username.toLowerCase().trim(),
         password_hash,
         is_active: true,
+        metadata: { mode: mode || 'standard' },
       })
       .select('id, name, venue, start_date, end_date, username, is_active')
       .single();

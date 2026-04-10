@@ -31,7 +31,7 @@ export default function AdminPage() {
   const [totals, setTotals] = useState<Totals>({ total_expos: 0, total_photos: 0, total_visitors: 0 });
   const [selectedExpoId, setSelectedExpoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [editExpoData, setEditExpoData] = useState<{ id: string; name: string; venue: string | null; start_date: string; end_date: string; username: string; groups: { id: string; name: string }[] } | null>(null);
+  const [editExpoData, setEditExpoData] = useState<{ id: string; name: string; venue: string | null; start_date: string; end_date: string; username: string; groups: { id: string; name: string }[]; mode?: string } | null>(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem('admin_token');
@@ -98,7 +98,7 @@ export default function AdminPage() {
 
   const handleCreateExpo = async (data: {
     name: string; venue: string; start_date: string; end_date: string;
-    username: string; password: string; groups: string[];
+    username: string; password: string; groups: string[]; mode: string;
   }) => {
     const res = await fetch('/api/expos', {
       method: 'POST',
@@ -119,7 +119,8 @@ export default function AdminPage() {
       const res = await fetch(`/api/expos/${expoId}`);
       const { data } = await res.json();
       if (data) {
-        setEditExpoData(data);
+        const meta = data.metadata as Record<string, unknown> | null;
+        setEditExpoData({ ...data, mode: (meta?.mode as string) || 'standard' });
         setView('edit-expo');
       }
     } catch { /* ignore */ }
@@ -127,7 +128,7 @@ export default function AdminPage() {
 
   const handleUpdateExpo = async (data: {
     name: string; venue: string; start_date: string; end_date: string;
-    username: string; password: string; groups: string[];
+    username: string; password: string; groups: string[]; mode: string;
   }) => {
     if (!editExpoData) return;
 
@@ -136,6 +137,7 @@ export default function AdminPage() {
       venue: data.venue,
       start_date: data.start_date,
       end_date: data.end_date,
+      metadata: { mode: data.mode },
     };
     if (data.password) updateBody.password = data.password;
 

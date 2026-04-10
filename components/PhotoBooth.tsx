@@ -7,6 +7,7 @@ import LandingScreen from './booth/LandingScreen';
 import CameraScreen from './booth/CameraScreen';
 import UserInfoScreen from './booth/UserInfoScreen';
 import ThemeSelectionScreen from './booth/ThemeSelectionScreen';
+import MarathonScreen from './booth/MarathonScreen';
 import LoadingScreen from './booth/LoadingScreen';
 import ResultScreen from './booth/ResultScreen';
 import ErrorScreen from './booth/ErrorScreen';
@@ -102,7 +103,7 @@ export default function PhotoBooth() {
 
   // Reset photo flow for a new user without logging out of the booth
   const resetForNextUser = () => {
-    setState(initialState);
+    setState({ ...initialState, screen: 'camera' });
     sessionStorage.removeItem(STORAGE_KEY);
   };
 
@@ -280,6 +281,7 @@ export default function PhotoBooth() {
           onLogout={clearSession}
           expoName={session?.expoName}
           onShowStats={() => setShowStats(true)}
+          expoMode={session?.expoMode}
         />
       );
 
@@ -298,11 +300,18 @@ export default function PhotoBooth() {
           groups={expoGroups}
           onNext={handleUserInfo}
           onBack={() => go('camera')}
+          expoMode={session?.expoMode}
         />
       );
 
     case 'themeSelection':
-      return (
+      return session?.expoMode === 'marathon' ? (
+        <MarathonScreen
+          capturedPhoto={state.capturedPhoto!}
+          onTransform={handleTransform}
+          onBack={() => go('userInfo')}
+        />
+      ) : (
         <ThemeSelectionScreen
           capturedPhoto={state.capturedPhoto!}
           onTransform={handleTransform}
@@ -323,6 +332,7 @@ export default function PhotoBooth() {
           onTryAnotherTheme={() => go('themeSelection')}
           onStartOver={resetForNextUser}
           onEdit={handleEdit}
+          expoMode={session?.expoMode}
         />
       );
 

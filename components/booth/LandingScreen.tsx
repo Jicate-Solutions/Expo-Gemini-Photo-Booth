@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Camera, Sparkles, Wand2, Briefcase, Star, Lock, LogOut, Download } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,65 @@ interface LandingScreenProps {
   onLogout: () => void;
   expoName?: string;
   onShowStats?: () => void;
+  expoMode?: string;
 }
 
-export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, expoName, onShowStats }: LandingScreenProps) {
+export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, expoName, onShowStats, expoMode }: LandingScreenProps) {
+  const isMarathon = expoMode === 'marathon';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { showInstallButton, hasNativePrompt, isIOS, promptInstall } = usePWAInstall();
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
+  const [floatPos, setFloatPos] = useState(() =>
+    [
+      { x: 80,  y: 120 },
+      { x: window.innerWidth - 100, y: 140 },
+      { x: 70,  y: window.innerHeight * 0.5 },
+      { x: window.innerWidth - 90,  y: window.innerHeight * 0.55 },
+      { x: 90,  y: window.innerHeight * 0.78 },
+      { x: window.innerWidth - 100, y: window.innerHeight * 0.75 },
+    ]
+  );
+  const cursorRef = useRef<{ x: number; y: number } | null>(null);
+  const movingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Slow float when cursor not moving
+  useEffect(() => {
+    if (!isMarathon) return;
+    const interval = setInterval(() => {
+      if (cursorRef.current) return;
+      setFloatPos(prev => prev.map(() => ({
+        x: 80 + Math.random() * (window.innerWidth - 160),
+        y: 100 + Math.random() * (window.innerHeight - 180),
+      })));
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [isMarathon]);
+
+  useEffect(() => {
+    if (!isMarathon) return;
+    const move = (e: MouseEvent) => {
+      const x = Math.min(Math.max(e.clientX, 80), window.innerWidth - 80);
+      const y = Math.min(Math.max(e.clientY, 100), window.innerHeight - 80);
+      cursorRef.current = { x, y };
+      setCursor({ x, y });
+      setIsMoving(true);
+      // Stop "moving" state after 150ms of no movement
+      if (movingTimer.current) clearTimeout(movingTimer.current);
+      movingTimer.current = setTimeout(() => setIsMoving(false), 150);
+    };
+    const leave = () => {
+      cursorRef.current = null;
+      setCursor(null);
+      setIsMoving(false);
+    };
+    window.addEventListener('mousemove', move);
+    document.documentElement.addEventListener('mouseleave', leave);
+    return () => {
+      window.removeEventListener('mousemove', move);
+      document.documentElement.removeEventListener('mouseleave', leave);
+    };
+  }, [isMarathon]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,6 +125,139 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
       </div>
     </div>
   );
+
+  // ── MARATHON FULL-SCREEN LAYOUT ──
+  if (isMarathon) {
+    return (
+      <div className="h-screen text-white overflow-hidden relative flex flex-col"
+        style={{ background: 'linear-gradient(160deg, #020d07 0%, #062916 40%, #051a0e 70%, #020d07 100%)' }}>
+
+        {/* Background glows */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-[-100px] left-[-100px] w-[500px] h-[500px] rounded-full blur-3xl opacity-30 animate-pulse"
+            style={{ background: 'radial-gradient(circle, #0b6d41, transparent)', animationDuration: '3s' }} />
+          <div className="absolute bottom-[-100px] right-[-100px] w-[500px] h-[500px] rounded-full blur-3xl opacity-20 animate-pulse"
+            style={{ background: 'radial-gradient(circle, #ffde59, transparent)', animationDuration: '4s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full blur-3xl opacity-10"
+            style={{ background: 'radial-gradient(circle, #0f8f56, transparent)' }} />
+        </div>
+
+        {/* Emoji school — float randomly, follow cursor on hover */}
+        {[
+          { emoji: '🏅', ox:   0, oy: -30, speed: '0.3s' },
+          { emoji: '🏆', ox: -30, oy: -15, speed: '0.4s' },
+          { emoji: '🏃', ox:  30, oy: -15, speed: '0.4s' },
+          { emoji: '🎀', ox: -30, oy:  20, speed: '0.5s' },
+          { emoji: '🎽', ox:  30, oy:  20, speed: '0.5s' },
+          { emoji: '⭐', ox:   0, oy:  35, speed: '0.6s' },
+        ].map((item, i) => {
+          const x = cursor ? cursor.x + item.ox : floatPos[i].x;
+          const y = cursor ? cursor.y + item.oy : floatPos[i].y;
+          return (
+            <div key={i} className="fixed pointer-events-none z-40"
+              style={{
+                left: x,
+                top: y,
+                fontSize: '1.9rem',
+                transition: isMoving
+                  ? `left ${item.speed} ease-out, top ${item.speed} ease-out`
+                  : 'left 3.5s cubic-bezier(0.45, 0, 0.55, 1), top 3.5s cubic-bezier(0.45, 0, 0.55, 1)',
+                filter: 'drop-shadow(0 0 8px rgba(255,222,89,0.7))',
+                opacity: 0.85,
+              }}>
+              {item.emoji}
+            </div>
+          );
+        })}
+
+        {/* Top bar */}
+        <div className="relative z-30 flex items-center justify-between px-4 py-2 border-b bg-black/40 backdrop-blur-sm"
+          style={{ borderColor: 'rgba(11,109,65,0.3)' }}>
+          <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: '#ffde59' }}>
+            🏃 {expoName}
+          </span>
+          <div className="flex items-center gap-2">
+            {onShowStats && (
+              <button onClick={onShowStats} className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition-colors">Stats</button>
+            )}
+            <button onClick={onLogout} className="text-xs text-gray-400 hover:text-red-400 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors">Logout</button>
+          </div>
+        </div>
+
+        {/* Top finish ribbon stripe */}
+        <div className="relative z-10 w-full h-5 flex-shrink-0 flex items-center justify-center"
+          style={{ background: 'repeating-linear-gradient(90deg, #0b6d41 0px, #0b6d41 30px, #ffde59 30px, #ffde59 60px)' }}>
+          <span className="text-[10px] font-black tracking-[0.3em] uppercase px-4 py-0.5 rounded-full text-white"
+            style={{ background: 'rgba(0,0,0,0.5)' }}>🏁 FINISH LINE 🏁</span>
+        </div>
+
+        {/* Main centered content */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center gap-5">
+
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold animate-pulse"
+            style={{ background: 'rgba(11,109,65,0.25)', border: '1px solid rgba(255,222,89,0.4)', color: '#ffde59', animationDuration: '3s' }}>
+            🏅 &nbsp;AI-Powered Marathon Experience
+          </div>
+
+          {/* Headline */}
+          <div>
+            <h1 className="font-black leading-tight" style={{ fontSize: 'clamp(3rem, 10vw, 5.5rem)' }}>
+              <span className="block text-white">Cross The</span>
+              <span className="block" style={{ color: '#ffde59', textShadow: '0 0 40px rgba(255,222,89,0.4)' }}>Finish Line!</span>
+            </h1>
+            <p className="text-gray-400 text-sm max-w-xs mx-auto leading-relaxed mt-2">
+              AI transforms your photo into a <span className="font-semibold" style={{ color: '#ffde59' }}>champion crossing the finish ribbon</span>
+            </p>
+          </div>
+
+          {/* 3 feature pills */}
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            {['🎀 Finish Ribbon', '⚡ 5s Transform', '📲 Share Free'].map((label) => (
+              <span key={label} className="text-xs px-3 py-1.5 rounded-full font-medium"
+                style={{ background: 'rgba(11,109,65,0.2)', border: '1px solid rgba(11,109,65,0.4)', color: '#a8e3c9' }}>
+                {label}
+              </span>
+            ))}
+          </div>
+
+          {/* BIG CTA Button */}
+          <div className="relative w-full max-w-md">
+            {/* Pulsing rings */}
+            <div className="absolute inset-[-8px] rounded-[32px] opacity-30 animate-ping"
+              style={{ border: '2px solid #ffde59', animationDuration: '2s' }} />
+            <div className="absolute inset-[-16px] rounded-[38px] opacity-15 animate-ping"
+              style={{ border: '2px solid #0b6d41', animationDuration: '2s', animationDelay: '0.5s' }} />
+            <div className="absolute inset-0 rounded-3xl blur-2xl opacity-60 animate-pulse"
+              style={{ background: 'linear-gradient(90deg, #0b6d41, #ffde59)', animationDuration: '2s' }} />
+            <button
+              onClick={onOpenCamera}
+              className="group relative w-full overflow-hidden rounded-3xl p-[2px] shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
+              style={{ background: 'linear-gradient(90deg, #ffde59, #0f8f56, #ffde59)' }}
+            >
+              <div className="relative flex items-center justify-center gap-5 rounded-[22px] px-8 py-7 transition-all duration-300"
+                style={{ background: 'linear-gradient(135deg, #042010, #0b6d41)' }}>
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0"
+                  style={{ background: 'rgba(255,222,89,0.15)', border: '2px solid rgba(255,222,89,0.5)', boxShadow: '0 0 20px rgba(255,222,89,0.3)' }}>📸</div>
+                <div className="text-left">
+                  <div className="font-black text-3xl leading-tight" style={{ color: '#ffde59', textShadow: '0 0 20px rgba(255,222,89,0.5)' }}>Open Camera</div>
+                  <div className="text-white/60 text-sm mt-1">Tap to create your victory moment</div>
+                </div>
+              </div>
+              <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
+            </button>
+          </div>
+
+        </div>
+
+        {/* Bottom finish ribbon stripe */}
+        <div className="relative z-10 w-full h-5 flex-shrink-0"
+          style={{ background: 'repeating-linear-gradient(90deg, #ffde59 0px, #ffde59 30px, #0b6d41 30px, #0b6d41 60px)', opacity: 0.7 }} />
+
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white overflow-hidden relative">
@@ -162,40 +349,75 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
 
           <div className="relative z-10 text-center w-full">
             {/* Badge */}
-            <div className="inline-flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full px-4 py-1.5 mb-6 text-xs text-purple-300">
+            <div className="inline-flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/30 rounded-full px-4 py-1.5 mb-6 text-xs text-orange-300">
               <Sparkles className="w-3 h-3" />
-              AI-Powered Transformation
+              {isMarathon ? 'Marathon Finish Line Experience' : 'AI-Powered Transformation'}
             </div>
 
             {/* Headline */}
             <h1 className="text-5xl font-black mb-4 leading-tight">
-              <span className="bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
-                Step Into
-              </span>
-              <br />
-              <span className="bg-gradient-to-r from-purple-400 via-pink-300 to-white bg-clip-text text-transparent">
-                Any World
-              </span>
+              {isMarathon ? (
+                <>
+                  <span className="bg-gradient-to-r from-white via-orange-200 to-orange-400 bg-clip-text text-transparent">
+                    Cross The
+                  </span>
+                  <br />
+                  <span className="bg-gradient-to-r from-orange-400 via-yellow-300 to-white bg-clip-text text-transparent">
+                    Finish Line!
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
+                    Step Into
+                  </span>
+                  <br />
+                  <span className="bg-gradient-to-r from-purple-400 via-pink-300 to-white bg-clip-text text-transparent">
+                    Any World
+                  </span>
+                </>
+              )}
             </h1>
 
             <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-              Take a photo and watch AI transform you into a doctor, superhero, knight — anything!
+              {isMarathon
+                ? 'Take a photo and AI will transform you into a champion crossing the marathon finish line!'
+                : 'Take a photo and watch AI transform you into a doctor, superhero, knight — anything!'}
             </p>
 
             {/* Stats row */}
             <div className="flex items-center justify-center gap-4 mb-8 text-xs">
-              <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2">
-                <div className="text-purple-300 font-black text-xl" style={{ textShadow: '0 0 20px rgba(167,139,250,0.5)' }}>150+</div>
-                <div className="text-gray-500">Themes</div>
-              </div>
-              <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2">
-                <div className="text-pink-300 font-black text-xl" style={{ textShadow: '0 0 20px rgba(236,72,153,0.5)' }}>5s</div>
-                <div className="text-gray-500">Transform</div>
-              </div>
-              <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2">
-                <div className="text-blue-300 font-black text-xl" style={{ textShadow: '0 0 20px rgba(147,197,253,0.5)' }}>Free</div>
-                <div className="text-gray-500">Download</div>
-              </div>
+              {isMarathon ? (
+                <>
+                  <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2">
+                    <div className="text-orange-300 font-black text-xl">🏅</div>
+                    <div className="text-gray-500">Finish Line</div>
+                  </div>
+                  <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2">
+                    <div className="text-yellow-300 font-black text-xl">5s</div>
+                    <div className="text-gray-500">Transform</div>
+                  </div>
+                  <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2">
+                    <div className="text-blue-300 font-black text-xl">Free</div>
+                    <div className="text-gray-500">Download</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2">
+                    <div className="text-purple-300 font-black text-xl" style={{ textShadow: '0 0 20px rgba(167,139,250,0.5)' }}>150+</div>
+                    <div className="text-gray-500">Themes</div>
+                  </div>
+                  <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2">
+                    <div className="text-pink-300 font-black text-xl" style={{ textShadow: '0 0 20px rgba(236,72,153,0.5)' }}>5s</div>
+                    <div className="text-gray-500">Transform</div>
+                  </div>
+                  <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2">
+                    <div className="text-blue-300 font-black text-xl" style={{ textShadow: '0 0 20px rgba(147,197,253,0.5)' }}>Free</div>
+                    <div className="text-gray-500">Download</div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* CTA Button */}
@@ -231,7 +453,7 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
         </div>
 
         {/* ── Mobile only: compact theme preview strip ── */}
-        <div className="md:hidden px-4 pb-8 space-y-5">
+        <div className={`md:hidden px-4 pb-8 space-y-5 ${isMarathon ? 'hidden' : ''}`}>
           {/* Career preview */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -273,7 +495,7 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
         </div>
 
         {/* ── RIGHT: Theme Showcase (two columns) — desktop only ── */}
-        <div className="hidden md:flex flex-1 overflow-hidden">
+        <div className={`flex-1 overflow-hidden ${isMarathon ? 'hidden' : 'hidden md:flex'}`}>
 
           {/* ── CAREER THEMES ── */}
           <div className="flex-1 flex flex-col overflow-hidden relative"

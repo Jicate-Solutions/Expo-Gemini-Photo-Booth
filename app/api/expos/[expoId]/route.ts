@@ -43,6 +43,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     if (body.end_date) updates.end_date = body.end_date;
     if (body.is_active !== undefined) updates.is_active = body.is_active;
     if (body.password) updates.password_hash = await hashPassword(body.password);
+    if (body.metadata !== undefined) updates.metadata = body.metadata;
 
     const { data, error } = await supabase
       .from('expos')

@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   const { data: expos } = await supabase
     .from('expos')
     .select('id, name, venue, start_date, end_date, is_active')
-    .order('start_date', { ascending: false });
+    .order('start_date', { ascending: false })
+    .limit(1000);
 
   if (!expos || expos.length === 0) {
     return NextResponse.json({ expos: [], totals: { total_expos: 0, total_photos: 0, total_visitors: 0 } });

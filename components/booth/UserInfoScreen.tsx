@@ -16,9 +16,11 @@ interface UserInfoScreenProps {
   groups: GroupOption[];
   onNext: (info: UserInfo) => void;
   onBack: () => void;
+  expoMode?: string;
 }
 
-export default function UserInfoScreen({ capturedPhoto, groups, onNext, onBack }: UserInfoScreenProps) {
+export default function UserInfoScreen({ capturedPhoto, groups, onNext, onBack, expoMode }: UserInfoScreenProps) {
+  const isMarathon = expoMode === 'marathon';
   const [form, setForm] = useState<UserInfo>({ name: '', mobile: '', group: '', groupId: undefined });
   const [errors, setErrors] = useState<Partial<Record<keyof UserInfo, string>>>({});
   const [groupSearch, setGroupSearch] = useState('');
@@ -35,7 +37,7 @@ export default function UserInfoScreen({ capturedPhoto, groups, onNext, onBack }
     const e: Partial<Record<keyof UserInfo, string>> = {};
     if (!form.name.trim()) e.name = 'Name is required';
     if (!form.mobile.trim()) e.mobile = 'WhatsApp number is required';
-    if (!form.group.trim()) e.group = 'Group is required';
+    if (!isMarathon && !form.group.trim()) e.group = 'Group is required';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -124,8 +126,8 @@ export default function UserInfoScreen({ capturedPhoto, groups, onNext, onBack }
                 {errors.mobile && <p className="text-red-400 text-xs mt-1">{errors.mobile}</p>}
               </div>
 
-              {/* Group Searchable Dropdown */}
-              <div>
+              {/* Group Searchable Dropdown — hidden for marathon */}
+              {!isMarathon && <div>
                 <label className="text-xs font-medium text-gray-400 mb-1.5 block">Group *</label>
 
                 {groups.length > 0 && !showOtherInput ? (
@@ -210,7 +212,7 @@ export default function UserInfoScreen({ capturedPhoto, groups, onNext, onBack }
                   </div>
                 )}
                 {errors.group && <p className="text-red-400 text-xs mt-1">{errors.group}</p>}
-              </div>
+              </div>}
 
               <div className="relative pt-2">
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 blur opacity-40" />
@@ -218,7 +220,7 @@ export default function UserInfoScreen({ capturedPhoto, groups, onNext, onBack }
                   type="submit"
                   className="relative w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white gap-2 py-6 text-base rounded-xl border-0"
                 >
-                  Continue to Themes
+                  {isMarathon ? 'Continue' : 'Continue to Themes'}
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>

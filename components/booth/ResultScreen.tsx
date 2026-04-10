@@ -14,6 +14,7 @@ interface ResultScreenProps {
   onTryAnotherTheme: () => void;
   onStartOver: () => void;
   onEdit: (prompt: string, referenceImages: string[]) => void;
+  expoMode?: string;
 }
 
 export default function ResultScreen({
@@ -24,7 +25,9 @@ export default function ResultScreen({
   onTryAnotherTheme,
   onStartOver,
   onEdit,
+  expoMode,
 }: ResultScreenProps) {
+  const isMarathon = expoMode === 'marathon';
   const [editPrompt, setEditPrompt] = useState('');
   const [editRefs, setEditRefs] = useState<string[]>([]);
   const [showEdit, setShowEdit] = useState(false);
@@ -322,10 +325,12 @@ export default function ResultScreen({
             </div>
           )}
 
-          <button onClick={onTryAnotherTheme} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 px-6 py-4 shadow-lg transition-all">
-            <RefreshCw className="w-5 h-5 text-white shrink-0" />
-            <span className="text-white font-semibold text-base">Try Another Theme</span>
-          </button>
+          {!isMarathon && (
+            <button onClick={onTryAnotherTheme} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 px-6 py-4 shadow-lg transition-all">
+              <RefreshCw className="w-5 h-5 text-white shrink-0" />
+              <span className="text-white font-semibold text-base">Try Another Theme</span>
+            </button>
+          )}
 
           <button onClick={handleDownload} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-500 hover:to-purple-400 px-6 py-4 shadow-lg transition-all">
             <Download className="w-5 h-5 text-white shrink-0" />

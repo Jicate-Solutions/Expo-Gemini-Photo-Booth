@@ -13,12 +13,13 @@ interface ExpoInitialData {
   end_date: string;
   username: string;
   groups: { id: string; name: string }[];
+  mode?: string;
 }
 
 interface ExpoFormProps {
   onSave: (data: {
     name: string; venue: string; start_date: string; end_date: string;
-    username: string; password: string; groups: string[];
+    username: string; password: string; groups: string[]; mode: string;
   }) => Promise<void>;
   onCancel: () => void;
   initialData?: ExpoInitialData;
@@ -33,6 +34,7 @@ export default function ExpoForm({ onSave, onCancel, initialData }: ExpoFormProp
   const [username, setUsername] = useState(initialData?.username || '');
   const [password, setPassword] = useState('');
   const [groups, setGroups] = useState<string[]>(initialData?.groups.map(g => g.name) || []);
+  const [mode, setMode] = useState(initialData?.mode || 'standard');
   const [groupInput, setGroupInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -56,7 +58,7 @@ export default function ExpoForm({ onSave, onCancel, initialData }: ExpoFormProp
     setSaving(true);
     setError('');
     try {
-      await onSave({ name, venue, start_date: startDate, end_date: endDate, username, password, groups });
+      await onSave({ name, venue, start_date: startDate, end_date: endDate, username, password, groups, mode });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create expo');
     } finally {
@@ -93,6 +95,18 @@ export default function ExpoForm({ onSave, onCancel, initialData }: ExpoFormProp
               <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
                 className="bg-white/5 border-white/10 text-white" />
             </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-400 mb-1.5 block">Booth Mode</label>
+            <select
+              value={mode}
+              onChange={e => setMode(e.target.value)}
+              className="w-full bg-gray-900 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-purple-500/50"
+            >
+              <option value="standard">Standard (Fun &amp; Career themes)</option>
+              <option value="marathon">Marathon (Finish line transformation)</option>
+            </select>
           </div>
 
           <div className="border-t border-white/10 pt-4 mt-4">

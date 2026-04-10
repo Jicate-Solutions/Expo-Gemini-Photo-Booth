@@ -75,6 +75,7 @@ export interface BoothSession {
   expoName: string;
   username: string;
   sessionToken: string;
+  expoMode?: string;
 }
 
 export interface ExpoStats {

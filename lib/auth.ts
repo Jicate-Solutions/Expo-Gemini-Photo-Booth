@@ -19,7 +19,7 @@ export async function authenticateExpo(username: string, password: string) {
   const supabase = createClient();
   const { data: expo, error } = await supabase
     .from('expos')
-    .select('id, name, venue, start_date, end_date, username, password_hash, is_active')
+    .select('id, name, venue, start_date, end_date, username, password_hash, is_active, metadata')
     .eq('username', username.toLowerCase().trim())
     .eq('is_active', true)
     .maybeSingle();

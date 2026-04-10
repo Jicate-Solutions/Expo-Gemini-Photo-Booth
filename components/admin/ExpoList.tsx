@@ -1,6 +1,7 @@
 'use client';
 
-import { Calendar, Users, Camera, MapPin, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, Users, Camera, MapPin, RotateCcw, Search, X } from 'lucide-react';
 import { ExpoOverview } from '@/types';
 
 interface ExpoListProps {
@@ -10,6 +11,8 @@ interface ExpoListProps {
 }
 
 export default function ExpoList({ expos, onSelect, onReactivate }: ExpoListProps) {
+  const [search, setSearch] = useState('');
+
   if (expos.length === 0) {
     return (
       <div className="text-center py-20 text-gray-600">
@@ -25,9 +28,41 @@ export default function ExpoList({ expos, onSelect, onReactivate }: ExpoListProp
     return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
   });
 
+  const filtered = search.trim()
+    ? sorted.filter(e =>
+        e.name.toLowerCase().includes(search.toLowerCase()) ||
+        (e.venue || '').toLowerCase().includes(search.toLowerCase())
+      )
+    : sorted;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-      {sorted.map(expo => {
+    <div className="px-6 pb-6">
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <input
+          type="text"
+          placeholder="Search expos by name or venue..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-white text-sm placeholder:text-gray-500 outline-none focus:border-purple-500/50 transition-colors"
+        />
+        {search && (
+          <button onClick={() => setSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="text-center py-16 text-gray-600">
+          <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No expos found for &ldquo;{search}&rdquo;</p>
+        </div>
+      )}
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {filtered.map(expo => {
         const isDeactivated = !expo.is_active;
         const isActive = expo.is_active && new Date(expo.end_date) >= new Date();
         const isPast = expo.is_active && new Date(expo.end_date) < new Date();
@@ -100,6 +135,7 @@ export default function ExpoList({ expos, onSelect, onReactivate }: ExpoListProp
           </div>
         );
       })}
+    </div>
     </div>
   );
 }
