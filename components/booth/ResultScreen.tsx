@@ -115,8 +115,14 @@ export default function ResultScreen({
       ctx.fill();
       ctx.drawImage(logo2, W - margin - logoW + pad, H - margin - logoH + pad, logoW - pad * 2, logoH - pad * 2);
 
-      // Bottom-left user name — stylish frosted pill
-      if (userName) {
+      // Bottom-left: logo for marathon, name pill for standard
+      if (isMarathon) {
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.beginPath();
+        ctx.roundRect(margin, H - margin - logoH, logoW, logoH, 6);
+        ctx.fill();
+        ctx.drawImage(logo1, margin + pad, H - margin - logoH + pad, logoW - pad * 2, logoH - pad * 2);
+      } else if (userName) {
         const fontSize = 34;
         ctx.font = `600 ${fontSize}px "Segoe UI", system-ui, sans-serif`;
         const starText = '✦ ';
@@ -128,25 +134,21 @@ export default function ResultScreen({
         const pillY = H - margin - pillH;
         const pillR = pillH / 2;
 
-        // Gradient background pill
         const grad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY);
-        grad.addColorStop(0, 'rgba(22, 163, 74, 0.9)');   // green-600
-        grad.addColorStop(1, 'rgba(34, 197, 94, 0.9)');   // green-500
+        grad.addColorStop(0, 'rgba(22, 163, 74, 0.9)');
+        grad.addColorStop(1, 'rgba(34, 197, 94, 0.9)');
         ctx.beginPath();
         ctx.roundRect(pillX, pillY, pillW, pillH, pillR);
         ctx.fillStyle = grad;
         ctx.fill();
 
-        // Subtle inner border
         ctx.strokeStyle = 'rgba(255,255,255,0.3)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Star icon
         ctx.fillStyle = 'rgba(255,255,255,0.7)';
         ctx.fillText(starText, pillX + 16, pillY + pillH - 14);
 
-        // User name text
         ctx.fillStyle = '#ffffff';
         ctx.fillText(userName.toUpperCase(), pillX + 16 + starW, pillY + pillH - 14);
       }
@@ -210,7 +212,7 @@ export default function ResultScreen({
         <img class="photo" src="${transformedImageUrl}" />
         <div class="logo-box tl"><img src="${logo1}" /></div>
         <div class="logo-box br"><img src="${logo2}" /></div>
-        ${userName ? `<div class="user-name">✦ ${userName}</div>` : ''}
+        ${isMarathon ? `<div class="logo-box" style="position:absolute;bottom:3mm;left:3mm;"><img src="${logo1}" /></div>` : (userName ? `<div class="user-name">✦ ${userName}</div>` : '')}
       </div>
     </body></html>`);
     doc.close();
