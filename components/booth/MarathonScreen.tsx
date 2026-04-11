@@ -4,31 +4,39 @@ import { ArrowLeft, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CareerStyle, Theme } from '@/types';
 
-const MARATHON_THEME: Theme = {
-  id: 'marathon-finish',
-  title: 'Marathon Finish',
-  type: 'fun',
-  emoji: '🏅',
-  prompt:
-    'Transform this person into a triumphant marathon runner crossing the finish line. ' +
-    'Keep the person\'s face, skin tone, and features exactly as they appear in the photo — do not alter or cartoon-ify the face. ' +
-    'They must be wearing a bright yellow sports t-shirt with the text "JKKN" printed clearly on the chest. ' +
-    'They are dramatically breaking through a bright finish line ribbon/tape with both arms raised in victory. ' +
-    'Show a race number bib over the yellow t-shirt, a crowd of cheering spectators in the background, ' +
-    'confetti falling, and a large banner reading "FINISH" overhead. ' +
-    'Ultra-realistic, high resolution, photographic quality, shot on a DSLR camera, natural lighting, ' +
-    'no illustration, no cartoon, no painting — pure photorealism.',
-};
+const TSHIRT_COLORS = ['red', 'blue', 'green', 'orange', 'purple', 'white', 'navy blue', 'maroon', 'teal', 'black'];
+
+function buildMarathonTheme(userName: string): Theme {
+  const color = TSHIRT_COLORS[Math.floor(Math.random() * TSHIRT_COLORS.length)];
+  const nameOnShirt = userName.trim() || 'RUNNER';
+  return {
+    id: 'marathon-finish',
+    title: 'Marathon Finish',
+    type: 'fun',
+    emoji: '🏅',
+    prompt:
+      'Transform this person into a triumphant marathon runner crossing the finish line. ' +
+      'Keep the person\'s face, skin tone, and features exactly as they appear in the photo — do not alter or cartoon-ify the face. ' +
+      `They must be wearing a ${color} regular short-sleeved crew-neck t-shirt (not sleeveless, not a tank top) ` +
+      `with the name "${nameOnShirt}" printed clearly on the chest. The t-shirt fits naturally for any gender. ` +
+      'They are dramatically breaking through a bright finish line ribbon/tape with both arms raised in victory. ' +
+      'Show a race number bib over the t-shirt, a crowd of cheering spectators in the background, ' +
+      'confetti falling, and a large banner reading "FINISH" overhead. ' +
+      'Ultra-realistic, high resolution, photographic quality, shot on a DSLR camera, natural lighting, ' +
+      'no illustration, no cartoon, no painting — pure photorealism.',
+  };
+}
 
 interface MarathonScreenProps {
   capturedPhoto: string;
+  userName?: string;
   onTransform: (theme: Theme | null, customPrompt: string, careerStyle: CareerStyle, referenceImages: string[]) => void;
   onBack: () => void;
 }
 
-export default function MarathonScreen({ capturedPhoto, onTransform, onBack }: MarathonScreenProps) {
+export default function MarathonScreen({ capturedPhoto, userName = '', onTransform, onBack }: MarathonScreenProps) {
   const handleCreate = () => {
-    onTransform(MARATHON_THEME, '', 'photorealistic', []);
+    onTransform(buildMarathonTheme(userName), '', 'photorealistic', []);
   };
 
   return (

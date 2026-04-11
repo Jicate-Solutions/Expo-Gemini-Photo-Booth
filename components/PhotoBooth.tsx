@@ -308,6 +308,7 @@ export default function PhotoBooth() {
       return session?.expoMode === 'marathon' ? (
         <MarathonScreen
           capturedPhoto={state.capturedPhoto!}
+          userName={state.userInfo?.name || ''}
           onTransform={handleTransform}
           onBack={() => go('userInfo')}
         />
