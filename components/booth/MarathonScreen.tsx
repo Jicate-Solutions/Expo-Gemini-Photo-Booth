@@ -6,7 +6,7 @@ import { CareerStyle, Theme } from '@/types';
 
 const TSHIRT_COLORS = ['red', 'blue', 'green', 'orange', 'purple', 'white', 'navy blue', 'maroon', 'teal', 'black'];
 
-function buildMarathonTheme(userName: string): Theme {
+export function buildMarathonTheme(userName: string): Theme {
   const color = TSHIRT_COLORS[Math.floor(Math.random() * TSHIRT_COLORS.length)];
   const nameOnShirt = userName.trim() || 'RUNNER';
   return {

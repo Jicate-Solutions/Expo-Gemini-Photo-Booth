@@ -220,7 +220,7 @@ export default function UserInfoScreen({ capturedPhoto, groups, onNext, onBack, 
                   type="submit"
                   className="relative w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white gap-2 py-6 text-base rounded-xl border-0"
                 >
-                  {isMarathon ? 'Continue' : 'Continue to Themes'}
+                  {isMarathon ? 'Create My Finish! 🏅' : 'Continue to Themes'}
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>

@@ -7,7 +7,7 @@ import LandingScreen from './booth/LandingScreen';
 import CameraScreen from './booth/CameraScreen';
 import UserInfoScreen from './booth/UserInfoScreen';
 import ThemeSelectionScreen from './booth/ThemeSelectionScreen';
-import MarathonScreen from './booth/MarathonScreen';
+import MarathonScreen, { buildMarathonTheme } from './booth/MarathonScreen';
 import LoadingScreen from './booth/LoadingScreen';
 import ResultScreen from './booth/ResultScreen';
 import ErrorScreen from './booth/ErrorScreen';
@@ -115,11 +115,17 @@ export default function PhotoBooth() {
   };
 
   const handleUserInfo = (info: UserInfo) => {
-    go('themeSelection', { userInfo: info });
+    if (session?.expoMode === 'marathon') {
+      // Skip theme selection — directly transform with marathon theme
+      setState(prev => ({ ...prev, userInfo: info }));
+      handleTransform(buildMarathonTheme(info.name), '', 'photorealistic', [], info);
+    } else {
+      go('themeSelection', { userInfo: info });
+    }
   };
 
   const handleTransform = useCallback(
-    async (theme: Theme | null, customPrompt: string, careerStyle: CareerStyle, referenceImages: string[]) => {
+    async (theme: Theme | null, customPrompt: string, careerStyle: CareerStyle, referenceImages: string[], userInfoOverride?: UserInfo) => {
       if (!state.capturedPhoto) return;
 
       go('loading', { selectedTheme: theme, careerStyle, customPrompt, referenceImages });
@@ -128,6 +134,7 @@ export default function PhotoBooth() {
         const themePrompt = theme ? theme.prompt : customPrompt;
         const themeType = theme ? theme.type : 'custom';
         const themeTitle = theme ? theme.title : 'Custom';
+        const userInfo = userInfoOverride || state.userInfo;
 
         const res = await fetch('/api/transform-image', {
           method: 'POST',
@@ -140,7 +147,7 @@ export default function PhotoBooth() {
             careerStyle,
             isEdit: false,
             referenceImages,
-            userInfo: state.userInfo,
+            userInfo,
           }),
         });
 
@@ -167,7 +174,7 @@ export default function PhotoBooth() {
                 existing.push({
                   id: Date.now().toString(),
                   url: photoPublicUrl,
-                  name: state.userInfo?.name || '',
+                  name: userInfo?.name || '',
                   theme: themeTitle,
                   addedAt: new Date().toISOString(),
                 });
@@ -182,16 +189,16 @@ export default function PhotoBooth() {
         }
 
         // Save user data once — only here, not in transform-image route
-        if (state.userInfo) {
+        if (userInfo) {
           fetch('/api/save-user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              name: state.userInfo.name,
-              mobile: state.userInfo.mobile,
-              group: state.userInfo.group,
+              name: userInfo.name,
+              mobile: userInfo.mobile,
+              group: userInfo.group,
               expoId: session?.expoId || null,
-              groupId: state.userInfo?.groupId || null,
+              groupId: userInfo?.groupId || null,
               theme: themeTitle,
               themeType,
               careerStyle,
