@@ -17,6 +17,7 @@ function buildMarathonTheme(userName: string): Theme {
     prompt:
       'Transform this person into a triumphant marathon runner crossing the finish line. ' +
       'Keep the person\'s face, skin tone, and features exactly as they appear in the photo — do not alter or cartoon-ify the face. ' +
+      'The person should have a natural, happy, proud smile — mouth relaxed or gently smiling, NOT wide open or shouting. ' +
       `They must be wearing a ${color} regular short-sleeved crew-neck t-shirt (not sleeveless, not a tank top) ` +
       `with the name "${nameOnShirt}" printed clearly on the chest. The t-shirt fits naturally for any gender. ` +
       'They are dramatically breaking through a bright finish line ribbon/tape with both arms raised in victory. ' +
