@@ -100,13 +100,15 @@ export default function ResultScreen({
       const logoH = H * 0.1;
       const margin = W * 0.025; // ~3mm at print scale
 
-      // Top-left logo
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.beginPath();
-      ctx.roundRect(margin, margin, logoW, logoH, 6);
-      ctx.fill();
       const pad = 4;
-      ctx.drawImage(logo1, margin + pad, margin + pad, logoW - pad * 2, logoH - pad * 2);
+      // Top-left logo — hidden for marathon (logo moves to bottom-left instead)
+      if (!isMarathon) {
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.beginPath();
+        ctx.roundRect(margin, margin, logoW, logoH, 6);
+        ctx.fill();
+        ctx.drawImage(logo1, margin + pad, margin + pad, logoW - pad * 2, logoH - pad * 2);
+      }
 
       // Bottom-right logo
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -210,7 +212,7 @@ export default function ResultScreen({
     </style></head><body>
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
-        <div class="logo-box tl"><img src="${logo1}" /></div>
+        ${!isMarathon ? `<div class="logo-box tl"><img src="${logo1}" /></div>` : ''}
         <div class="logo-box br"><img src="${logo2}" /></div>
         ${isMarathon ? `<div class="logo-box" style="position:absolute;bottom:3mm;left:3mm;"><img src="${logo1}" /></div>` : (userName ? `<div class="user-name">✦ ${userName}</div>` : '')}
       </div>
