@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { Camera, Sparkles, Wand2, Briefcase, Star, Lock, LogOut, Download } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Button } from '@/components/ui/button';
@@ -20,58 +20,6 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
   const isMarathon = expoMode === 'marathon';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { showInstallButton, hasNativePrompt, isIOS, promptInstall } = usePWAInstall();
-  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
-  const [isMoving, setIsMoving] = useState(false);
-  const [floatPos, setFloatPos] = useState(() =>
-    [
-      { x: 80,  y: 120 },
-      { x: window.innerWidth - 100, y: 140 },
-      { x: 70,  y: window.innerHeight * 0.5 },
-      { x: window.innerWidth - 90,  y: window.innerHeight * 0.55 },
-      { x: 90,  y: window.innerHeight * 0.78 },
-      { x: window.innerWidth - 100, y: window.innerHeight * 0.75 },
-    ]
-  );
-  const cursorRef = useRef<{ x: number; y: number } | null>(null);
-  const movingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Slow float when cursor not moving
-  useEffect(() => {
-    if (!isMarathon) return;
-    const interval = setInterval(() => {
-      if (cursorRef.current) return;
-      setFloatPos(prev => prev.map(() => ({
-        x: 80 + Math.random() * (window.innerWidth - 160),
-        y: 100 + Math.random() * (window.innerHeight - 180),
-      })));
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [isMarathon]);
-
-  useEffect(() => {
-    if (!isMarathon) return;
-    const move = (e: MouseEvent) => {
-      const x = Math.min(Math.max(e.clientX, 80), window.innerWidth - 80);
-      const y = Math.min(Math.max(e.clientY, 100), window.innerHeight - 80);
-      cursorRef.current = { x, y };
-      setCursor({ x, y });
-      setIsMoving(true);
-      // Stop "moving" state after 150ms of no movement
-      if (movingTimer.current) clearTimeout(movingTimer.current);
-      movingTimer.current = setTimeout(() => setIsMoving(false), 150);
-    };
-    const leave = () => {
-      cursorRef.current = null;
-      setCursor(null);
-      setIsMoving(false);
-    };
-    window.addEventListener('mousemove', move);
-    document.documentElement.addEventListener('mouseleave', leave);
-    return () => {
-      window.removeEventListener('mousemove', move);
-      document.documentElement.removeEventListener('mouseleave', leave);
-    };
-  }, [isMarathon]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -142,33 +90,6 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
             style={{ background: 'radial-gradient(circle, #0f8f56, transparent)' }} />
         </div>
 
-        {/* Emoji school — float randomly, follow cursor on hover */}
-        {[
-          { emoji: '🏅', ox:   0, oy: -30, speed: '0.3s' },
-          { emoji: '🏆', ox: -30, oy: -15, speed: '0.4s' },
-          { emoji: '🏃', ox:  30, oy: -15, speed: '0.4s' },
-          { emoji: '🎀', ox: -30, oy:  20, speed: '0.5s' },
-          { emoji: '🎽', ox:  30, oy:  20, speed: '0.5s' },
-          { emoji: '⭐', ox:   0, oy:  35, speed: '0.6s' },
-        ].map((item, i) => {
-          const x = cursor ? cursor.x + item.ox : floatPos[i].x;
-          const y = cursor ? cursor.y + item.oy : floatPos[i].y;
-          return (
-            <div key={i} className="fixed pointer-events-none z-40"
-              style={{
-                left: x,
-                top: y,
-                fontSize: '1.9rem',
-                transition: isMoving
-                  ? `left ${item.speed} ease-out, top ${item.speed} ease-out`
-                  : 'left 3.5s cubic-bezier(0.45, 0, 0.55, 1), top 3.5s cubic-bezier(0.45, 0, 0.55, 1)',
-                filter: 'drop-shadow(0 0 8px rgba(255,222,89,0.7))',
-                opacity: 0.85,
-              }}>
-              {item.emoji}
-            </div>
-          );
-        })}
 
         {/* Top bar */}
         <div className="relative z-30 flex items-center justify-between px-4 py-2 border-b bg-black/40 backdrop-blur-sm"
