@@ -366,9 +366,17 @@ export default function ResultScreen({
             </div>
           )}
 
-          {/* Glow wrapper + reveal animation */}
-          <div className={`img-reveal rounded-lg overflow-hidden ${isMarathon ? 'glow-marathon' : 'glow-standard'}`}>
-            <img src={transformedImageUrl} alt="Transformed" className="result-image max-w-full max-h-full object-contain" style={{ aspectRatio: '2/3', display: 'block' }} />
+          {/* Fixed 4:6 (2:3) frame — glow wrapper + reveal animation */}
+          <div
+            className={`img-reveal rounded-lg overflow-hidden ${isMarathon ? 'glow-marathon' : 'glow-standard'}`}
+            style={{ aspectRatio: '2/3', height: '100%', maxHeight: '100%', flexShrink: 0 }}
+          >
+            <img
+              src={transformedImageUrl}
+              alt="Transformed"
+              className="result-image"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
         </div>
