@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle, Printer, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,7 +31,70 @@ export default function ResultScreen({
   const [editPrompt, setEditPrompt] = useState('');
   const [editRefs, setEditRefs] = useState<string[]>([]);
   const [showEdit, setShowEdit] = useState(false);
+  const [showBanner, setShowBanner] = useState(true);
   const editFileRef = useRef<HTMLInputElement>(null);
+
+  // Confetti burst on mount
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d')!;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const colors = isMarathon
+      ? ['#0b6d41', '#ffde59', '#ffffff', '#22c55e', '#fbbf24', '#f97316']
+      : ['#a855f7', '#ec4899', '#ffffff', '#8b5cf6', '#f472b6', '#38bdf8'];
+
+    const particles = Array.from({ length: 140 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -200,
+      w: Math.random() * 10 + 5,
+      h: Math.random() * 6 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speed: Math.random() * 4 + 2,
+      angle: Math.random() * 360,
+      spin: (Math.random() - 0.5) * 6,
+    }));
+
+    let frame: number;
+    const start = Date.now();
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const elapsed = Date.now() - start;
+      const alpha = Math.max(0, 1 - Math.max(0, elapsed - 2000) / 1000);
+
+      particles.forEach(p => {
+        p.y += p.speed;
+        p.angle += p.spin;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.angle * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+
+      if (elapsed < 3000) {
+        frame = requestAnimationFrame(animate);
+      } else {
+        if (document.body.contains(canvas)) document.body.removeChild(canvas);
+      }
+    };
+
+    frame = requestAnimationFrame(animate);
+    const bannerTimer = setTimeout(() => setShowBanner(false), 2200);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(bannerTimer);
+      if (document.body.contains(canvas)) document.body.removeChild(canvas);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Clean phone number for WhatsApp
   const cleanPhone = userMobile.replace(/\D/g, '');
@@ -246,6 +309,31 @@ export default function ResultScreen({
   return (
     <div className="h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 text-white flex flex-col overflow-hidden print:bg-white print:block">
       <style>{`
+        @keyframes img-reveal {
+          from { opacity: 0; transform: scale(0.90); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes glow-marathon {
+          0%, 100% { box-shadow: 0 0 30px rgba(11,109,65,0.7), 0 0 70px rgba(255,222,89,0.35); }
+          50%       { box-shadow: 0 0 55px rgba(11,109,65,1),   0 0 110px rgba(255,222,89,0.6); }
+        }
+        @keyframes glow-standard {
+          0%, 100% { box-shadow: 0 0 30px rgba(139,92,246,0.6), 0 0 70px rgba(236,72,153,0.3); }
+          50%       { box-shadow: 0 0 55px rgba(139,92,246,0.9), 0 0 110px rgba(236,72,153,0.55); }
+        }
+        @keyframes banner-in {
+          from { opacity: 0; transform: translateY(-20px) scale(0.9); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes banner-out {
+          from { opacity: 1; transform: translateY(0) scale(1); }
+          to   { opacity: 0; transform: translateY(-16px) scale(0.95); }
+        }
+        .img-reveal { animation: img-reveal 0.65s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .glow-marathon { animation: glow-marathon 2.2s ease-in-out infinite; }
+        .glow-standard { animation: glow-standard 2.2s ease-in-out infinite; }
+        .banner-in  { animation: banner-in  0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .banner-out { animation: banner-out 0.4s ease-in forwards; }
         @media print {
           @page { size: 4in 6in; margin: 0; }
           body { margin: 0; padding: 0; }
@@ -271,7 +359,17 @@ export default function ResultScreen({
       <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
         {/* Image */}
         <div className="h-[60vh] lg:h-auto lg:flex-1 overflow-hidden flex-shrink-0 relative flex items-center justify-center bg-black">
-          <img src={transformedImageUrl} alt="Transformed" className="result-image max-w-full max-h-full object-contain" style={{ aspectRatio: '2/3' }} />
+          {/* Celebration banner */}
+          {showBanner && (
+            <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 px-5 py-2.5 rounded-full text-sm font-bold shadow-2xl flex items-center gap-2 ${showBanner ? 'banner-in' : 'banner-out'} ${isMarathon ? 'bg-gradient-to-r from-[#0b6d41] to-[#16a34a] text-[#ffde59]' : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'}`}>
+              {isMarathon ? '🏅 You crossed the finish line!' : '✨ Your transformation is ready!'}
+            </div>
+          )}
+
+          {/* Glow wrapper + reveal animation */}
+          <div className={`img-reveal rounded-lg overflow-hidden ${isMarathon ? 'glow-marathon' : 'glow-standard'}`}>
+            <img src={transformedImageUrl} alt="Transformed" className="result-image max-w-full max-h-full object-contain" style={{ aspectRatio: '2/3', display: 'block' }} />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
         </div>
 
