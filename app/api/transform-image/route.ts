@@ -43,32 +43,52 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-image-preview',
-      contents: [{ role: 'user', parts }],
-      config: { responseModalities: ['IMAGE', 'TEXT'] },
-    });
+    const MAX_ATTEMPTS = 3;
+    let lastError: unknown = null;
 
-    const responseParts = response.candidates?.[0]?.content?.parts;
-    if (!responseParts) {
-      return NextResponse.json({ error: 'No response from AI model' }, { status: 500 });
-    }
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.1-flash-image-preview',
+          contents: [{ role: 'user', parts }],
+          config: { responseModalities: ['IMAGE', 'TEXT'] },
+        });
 
-    for (const part of responseParts) {
-      if (part.inlineData) {
-        const transformedImage = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        return NextResponse.json({ transformedImage });
+        const responseParts = response.candidates?.[0]?.content?.parts;
+        if (!responseParts) {
+          return NextResponse.json({ error: 'No response from AI model' }, { status: 500 });
+        }
+
+        for (const part of responseParts) {
+          if (part.inlineData) {
+            const transformedImage = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            return NextResponse.json({ transformedImage });
+          }
+        }
+
+        return NextResponse.json({ error: 'No image generated' }, { status: 500 });
+
+      } catch (err: unknown) {
+        lastError = err;
+        const e = err as { status?: number; code?: number; message?: string };
+        const is503 = e?.status === 503 || e?.code === 503 ||
+          (e?.message || '').toLowerCase().includes('deadline') ||
+          (e?.message || '').toLowerCase().includes('unavailable');
+
+        // Don't retry rate limits — only retry timeouts/503s
+        if (!is503 || attempt === MAX_ATTEMPTS) break;
+
+        console.warn(`Gemini timeout (attempt ${attempt}/${MAX_ATTEMPTS}), retrying...`);
+        await new Promise(r => setTimeout(r, 1500 * attempt)); // 1.5s, 3s
       }
     }
 
-    return NextResponse.json({ error: 'No image generated' }, { status: 500 });
-
-  } catch (error: unknown) {
-    console.error('Transform error:', error);
-    const err = error as { status?: number; message?: string };
-    if (err?.status === 429) {
+    const e = lastError as { status?: number; message?: string };
+    console.error('Transform error after retries:', lastError);
+    if (e?.status === 429) {
       return NextResponse.json({ error: 'Rate limit reached. Please try again in a moment.' }, { status: 429 });
     }
-    return NextResponse.json({ error: err.message || 'Failed to transform image' }, { status: 500 });
+    return NextResponse.json({ error: 'Generation timed out. Please try again.' }, { status: 500 });
+
   }
 }
