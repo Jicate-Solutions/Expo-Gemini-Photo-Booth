@@ -145,11 +145,11 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
           {/* BIG CTA Button */}
           <div className="relative w-full max-w-md">
             {/* Pulsing rings */}
-            <div className="absolute inset-[-8px] rounded-[32px] opacity-30 animate-ping"
+            <div className="absolute inset-[-8px] rounded-[32px] opacity-30 animate-ping pointer-events-none"
               style={{ border: '2px solid #ffde59', animationDuration: '2s' }} />
-            <div className="absolute inset-[-16px] rounded-[38px] opacity-15 animate-ping"
+            <div className="absolute inset-[-16px] rounded-[38px] opacity-15 animate-ping pointer-events-none"
               style={{ border: '2px solid #0b6d41', animationDuration: '2s', animationDelay: '0.5s' }} />
-            <div className="absolute inset-0 rounded-3xl blur-2xl opacity-60 animate-pulse"
+            <div className="absolute inset-0 rounded-3xl blur-2xl opacity-60 animate-pulse pointer-events-none"
               style={{ background: 'linear-gradient(90deg, #0b6d41, #ffde59)', animationDuration: '2s' }} />
             <button
               onClick={onOpenCamera}
@@ -172,7 +172,7 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
           {/* Admin Dashboard link */}
           <button
             onClick={() => window.location.href = '/admin'}
-            className="text-xs text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors mt-1"
+            className="relative z-10 text-xs text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors mt-1"
           >
             Admin Dashboard
           </button>
