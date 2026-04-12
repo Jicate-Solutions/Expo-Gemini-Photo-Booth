@@ -216,7 +216,7 @@ export default function PhotoBooth() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.capturedPhoto, state.userInfo]
+    [state.capturedPhoto, state.userInfo, session]
   );
 
   const handleEdit = useCallback(
