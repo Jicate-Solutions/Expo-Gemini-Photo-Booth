@@ -90,5 +90,8 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: 'Generation timed out. Please try again.' }, { status: 500 });
 
+  } catch (error: unknown) {
+    console.error('Unexpected transform error:', error);
+    return NextResponse.json({ error: 'Failed to transform image' }, { status: 500 });
   }
 }
