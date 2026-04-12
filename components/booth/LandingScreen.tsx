@@ -169,6 +169,14 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
             </button>
           </div>
 
+          {/* Admin Dashboard link */}
+          <button
+            onClick={() => window.location.href = '/admin'}
+            className="text-xs text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors mt-1"
+          >
+            Admin Dashboard
+          </button>
+
         </div>
 
         {/* Bottom finish ribbon stripe */}
