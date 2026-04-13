@@ -16,12 +16,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ expos: [], totals: { total_expos: 0, total_photos: 0, total_visitors: 0 } });
   }
 
-  const { data: transformations } = await supabase
-    .from('user_transformations')
-    .select('expo_id, mobile_number')
-    .limit(10000);
-
-  const rows = transformations || [];
+  // Paginate to bypass Supabase server-side max-rows limit (1000)
+  let rows: { expo_id: string; mobile_number: string }[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data: batch } = await supabase
+      .from('user_transformations')
+      .select('expo_id, mobile_number')
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+    if (!batch || batch.length === 0) break;
+    rows = [...rows, ...batch];
+    if (batch.length < pageSize) break;
+    page++;
+  }
 
   const expoStats = new Map<string, { photos: number; visitors: Set<string> }>();
   rows.forEach(r => {
