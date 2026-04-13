@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
 
   const { data: transformations } = await supabase
     .from('user_transformations')
-    .select('expo_id, mobile_number');
+    .select('expo_id, mobile_number')
+    .limit(10000);
 
   const rows = transformations || [];
 
