@@ -40,7 +40,7 @@ function DownloadContent() {
 
       <div className="max-w-lg mx-auto px-6 py-8">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold mb-1">✨ Gemini Magic Booth</h1>
+          <h1 className="text-2xl font-bold mb-1">✨ Magic Booth</h1>
           <p className="text-purple-300 text-sm">{theme}</p>
         </div>
 
@@ -48,7 +48,7 @@ function DownloadContent() {
           <div className="rounded-2xl overflow-hidden border border-purple-500/20 shadow-2xl shadow-purple-900/40 mb-8 relative">
             <img src={imageUrl} alt="Your transformation" className="w-full h-auto" />
             <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
-              <p className="text-white text-xs font-semibold">✨ Gemini Magic Booth</p>
+              <p className="text-white text-xs font-semibold">✨ Magic Booth</p>
               <p className="text-gray-300 text-[10px]">by Jicate Solutions</p>
             </div>
           </div>

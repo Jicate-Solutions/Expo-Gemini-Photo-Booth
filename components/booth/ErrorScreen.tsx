@@ -18,7 +18,7 @@ function describe(message: string) {
     return {
       icon: CreditCard,
       title: 'AI credits used up',
-      hint: 'Staff: the Gemini API balance is empty. Top up at ai.studio → Billing, then try again.',
+      hint: 'Staff: the OpenAI API balance is empty. Add credits at platform.openai.com → Settings → Billing, then try again.',
       tone: 'amber' as const,
     };
   }

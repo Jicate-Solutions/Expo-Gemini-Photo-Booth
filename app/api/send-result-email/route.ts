@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       <head><meta charset="utf-8"><title>Your AI Transformation</title></head>
       <body style="font-family: Arial, sans-serif; background: #0f0f23; color: #ffffff; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; background: #1a1a2e; border-radius: 16px; padding: 32px; text-align: center;">
-          <h1 style="color: #a855f7; font-size: 28px; margin-bottom: 8px;">✨ Gemini Magic Booth</h1>
+          <h1 style="color: #a855f7; font-size: 28px; margin-bottom: 8px;">✨ Magic Booth</h1>
           <p style="color: #9ca3af; margin-bottom: 24px;">by Jicate Solutions</p>
           <p style="font-size: 18px;">Hi <strong>${userName}</strong>!</p>
           <p>Your AI transformation as <strong>${themeName}</strong> is ready.</p>
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     `;
 
     await transporter.sendMail({
-      from: `"Gemini Magic Booth" <${process.env.GMAIL_USER}>`,
+      from: `"Magic Booth" <${process.env.GMAIL_USER}>`,
       to,
       subject: `✨ Your AI Transformation is Ready — ${themeName}`,
       html,

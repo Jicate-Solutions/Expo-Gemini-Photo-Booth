@@ -5,7 +5,7 @@ import sharp from 'sharp';
 /**
  * Erode Marathon 2026 poster.
  *
- * Flow: Gemini receives the visitor's photo + a poster template (public/marathon/erode-template.jpg)
+ * Flow: the AI (OpenAI by default, or Gemini) receives the visitor's photo + a poster template (public/marathon/erode-template.jpg)
  * and redraws the poster with the visitor as the runner. The template has its logo area blanked out,
  * and we stamp the REAL logos (Yi + green JKKN) onto the result afterwards, because AI-drawn logos
  * are never exact.

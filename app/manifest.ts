@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Gemini Magic Booth — AI Photo Transformation',
+    name: 'Magic Booth — AI Photo Transformation',
     short_name: 'Magic Booth',
     description:
       'Transform your photo with AI. 110+ themes — superhero, career, fantasy and more.',

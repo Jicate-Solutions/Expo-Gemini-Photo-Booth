@@ -112,8 +112,8 @@ export default function ResultScreen({
       ? `Hi ${firstName}! 🏅 Congratulations on running the Erode Marathon 2026!\n\nHere is your finisher poster:\n${transformedImageUrl}\n\nI choose a drug-free life! 💪 Run for health. Run for life.\n— Yi Young Indians × JKKN`
       : `Hi ${firstName}! 🏅 Thank you for running the Erode Marathon 2026 — Yi Young Indians × JKKN`
     : isPublicUrl
-      ? `Here is your AI transformed photo from Gemini Magic Booth! 🎉\n\n${transformedImageUrl}`
-      : `Thank you for visiting Gemini Magic Booth! 🎉`;
+      ? `Here is your AI transformed photo from Magic Booth! 🎉\n\n${transformedImageUrl}`
+      : `Thank you for visiting Magic Booth! 🎉`;
   const [whatsappOpened, setWhatsappOpened] = useState(false);
 
   const handleWhatsAppShare = () => {

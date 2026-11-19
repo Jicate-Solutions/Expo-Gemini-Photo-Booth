@@ -237,7 +237,7 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
           <div className="w-7 h-7 bg-gradient-to-br from-purple-500/30 to-pink-500/20 border border-purple-500/40 rounded-lg flex items-center justify-center">
             <Wand2 className="w-4 h-4 text-purple-300" />
           </div>
-          <span className="font-black text-base bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent">Gemini Magic Booth</span>
+          <span className="font-black text-base bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent">Magic Booth</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 rounded-full px-3 py-1 text-xs text-purple-300">
