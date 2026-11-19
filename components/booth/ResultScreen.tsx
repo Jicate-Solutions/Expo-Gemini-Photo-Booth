@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle, Printer, Download } from 'lucide-react';
+import { Wand2, RotateCcw, RefreshCw, X, Upload, MessageCircle, Printer, Download, Camera, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Theme } from '@/types';
@@ -15,6 +15,10 @@ interface ResultScreenProps {
   onStartOver: () => void;
   onEdit: (prompt: string, referenceImages: string[]) => void;
   expoMode?: string;
+  /** Marathon: go back to the camera, keeping the runner's details */
+  onRetake?: () => void;
+  /** Marathon: make a new poster from the same selfie (new t-shirt colour) */
+  onRegenerate?: () => void;
 }
 
 export default function ResultScreen({
@@ -26,6 +30,8 @@ export default function ResultScreen({
   onStartOver,
   onEdit,
   expoMode,
+  onRetake,
+  onRegenerate,
 }: ResultScreenProps) {
   const isMarathon = expoMode === 'marathon';
   const [editPrompt, setEditPrompt] = useState('');
@@ -100,9 +106,15 @@ export default function ResultScreen({
   const cleanPhone = userMobile.replace(/\D/g, '');
   const whatsappPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
   const isPublicUrl = transformedImageUrl && !transformedImageUrl.startsWith('data:');
-  const whatsappMessage = isPublicUrl
-    ? `Here is your AI transformed photo from Gemini Magic Booth! 🎉\n\n${transformedImageUrl}`
-    : `Thank you for visiting Gemini Magic Booth! 🎉`;
+  const firstName = (userName || '').trim().split(/\s+/)[0] || '';
+  const whatsappMessage = isMarathon
+    ? isPublicUrl
+      ? `Hi ${firstName}! 🏅 Congratulations on running the Erode Marathon 2026!\n\nHere is your finisher poster:\n${transformedImageUrl}\n\nI choose a drug-free life! 💪 Run for health. Run for life.\n— Yi Young Indians × JKKN`
+      : `Hi ${firstName}! 🏅 Thank you for running the Erode Marathon 2026 — Yi Young Indians × JKKN`
+    : isPublicUrl
+      ? `Here is your AI transformed photo from Gemini Magic Booth! 🎉\n\n${transformedImageUrl}`
+      : `Thank you for visiting Gemini Magic Booth! 🎉`;
+  const [whatsappOpened, setWhatsappOpened] = useState(false);
 
   const handleWhatsAppShare = () => {
     // Validate: Indian mobile numbers must be 10 digits
@@ -114,6 +126,7 @@ export default function ResultScreen({
     }
 
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    setWhatsappOpened(true);
 
     if (isMobile) {
       // Mobile: open WhatsApp app directly to the user's number with image URL in message
@@ -173,21 +186,18 @@ export default function ResultScreen({
         ctx.drawImage(logo1, margin + pad, margin + pad, logoW - pad * 2, logoH - pad * 2);
       }
 
-      // Bottom-right logo
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.beginPath();
-      ctx.roundRect(W - margin - logoW, H - margin - logoH, logoW, logoH, 6);
-      ctx.fill();
-      ctx.drawImage(logo2, W - margin - logoW + pad, H - margin - logoH + pad, logoW - pad * 2, logoH - pad * 2);
-
-      // Bottom-left: logo for marathon, name pill for standard
-      if (isMarathon) {
+      // Bottom-right logo — skipped for marathon: the Erode poster already carries the real
+      // Yi | JKKN logos (stamped server-side), and corner logos would cover its bottom panel.
+      if (!isMarathon) {
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
         ctx.beginPath();
-        ctx.roundRect(margin, H - margin - logoH, logoW, logoH, 6);
+        ctx.roundRect(W - margin - logoW, H - margin - logoH, logoW, logoH, 6);
         ctx.fill();
-        ctx.drawImage(logo1, margin + pad, H - margin - logoH + pad, logoW - pad * 2, logoH - pad * 2);
-      } else if (userName) {
+        ctx.drawImage(logo2, W - margin - logoW + pad, H - margin - logoH + pad, logoW - pad * 2, logoH - pad * 2);
+      }
+
+      // Bottom-left: name pill for standard expos
+      if (!isMarathon && userName) {
         const fontSize = 34;
         ctx.font = `600 ${fontSize}px "Segoe UI", system-ui, sans-serif`;
         const starText = '✦ ';
@@ -276,8 +286,8 @@ export default function ResultScreen({
       <div class="frame">
         <img class="photo" src="${transformedImageUrl}" />
         ${!isMarathon ? `<div class="logo-box tl"><img src="${logo1}" /></div>` : ''}
-        <div class="logo-box br"><img src="${logo2}" /></div>
-        ${isMarathon ? `<div class="logo-box" style="position:absolute;bottom:3mm;left:3mm;"><img src="${logo1}" /></div>` : (userName ? `<div class="user-name">✦ ${userName}</div>` : '')}
+        ${!isMarathon ? `<div class="logo-box br"><img src="${logo2}" /></div>` : ''}
+        ${!isMarathon && userName ? `<div class="user-name">✦ ${userName}</div>` : ''}
       </div>
     </body></html>`);
     doc.close();
@@ -307,19 +317,19 @@ export default function ResultScreen({
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 text-white flex flex-col overflow-hidden print:bg-white print:block">
+    <div className={`h-screen ${isMarathon ? 'bg-gradient-to-br from-emerald-50 via-white to-orange-50' : 'bg-gradient-to-br from-purple-50 via-white to-pink-50'} text-slate-900 flex flex-col overflow-hidden print:bg-white print:block`}>
       <style>{`
         @keyframes img-reveal {
           from { opacity: 0; transform: scale(0.90); }
           to   { opacity: 1; transform: scale(1); }
         }
         @keyframes glow-marathon {
-          0%, 100% { box-shadow: 0 0 30px rgba(11,109,65,0.7), 0 0 70px rgba(255,222,89,0.35); }
-          50%       { box-shadow: 0 0 55px rgba(11,109,65,1),   0 0 110px rgba(255,222,89,0.6); }
+          0%, 100% { box-shadow: 0 20px 50px rgba(11,109,65,0.22), 0 0 0 1px rgba(11,109,65,0.10); }
+          50%       { box-shadow: 0 24px 70px rgba(249,115,22,0.30), 0 0 0 1px rgba(11,109,65,0.14); }
         }
         @keyframes glow-standard {
-          0%, 100% { box-shadow: 0 0 30px rgba(139,92,246,0.6), 0 0 70px rgba(236,72,153,0.3); }
-          50%       { box-shadow: 0 0 55px rgba(139,92,246,0.9), 0 0 110px rgba(236,72,153,0.55); }
+          0%, 100% { box-shadow: 0 20px 50px rgba(139,92,246,0.22), 0 0 0 1px rgba(139,92,246,0.10); }
+          50%       { box-shadow: 0 24px 70px rgba(236,72,153,0.28), 0 0 0 1px rgba(139,92,246,0.14); }
         }
         @keyframes banner-in {
           from { opacity: 0; transform: translateY(-20px) scale(0.9); }
@@ -346,19 +356,33 @@ export default function ResultScreen({
           }
         }
       `}</style>
-      <header className="print:hidden flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-white/10 flex-shrink-0">
-        <div>
-          <h1 className="font-bold text-lg">✨ Your Transformation</h1>
-          {selectedTheme && <p className="text-gray-400 text-xs">{selectedTheme.title}</p>}
+      <header className="print:hidden flex items-center justify-between gap-3 px-4 md:px-6 py-3 border-b border-slate-200/80 bg-white/80 backdrop-blur-md flex-shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          {isMarathon && (
+            <div className="hidden sm:flex items-center gap-3 pr-3 border-r border-slate-200">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/marathon/yi-logo.png" alt="Yi Young Indians" className="h-9 w-auto object-contain" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/jkkn-logo.png" alt="JKKN" className="h-8 w-auto object-contain" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <h1 className="font-bold text-lg text-slate-900 tracking-tight truncate">
+              {isMarathon ? `🏅 ${userName ? `${userName.split(' ')[0]}'s` : 'Your'} Finisher Poster` : '✨ Your Transformation'}
+            </h1>
+            {!isMarathon && selectedTheme && <p className="text-slate-500 text-xs">{selectedTheme.title}</p>}
+            {isMarathon && <p className="text-slate-500 text-xs">Erode Marathon 2026</p>}
+          </div>
         </div>
-        <button onClick={onStartOver} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600/90 hover:bg-red-500 text-white font-semibold text-sm transition-colors shadow-md">
-          <RotateCcw className="w-4 h-4" /> Start Over
+        <button onClick={onStartOver}
+          className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-sm transition-colors shadow-sm">
+          <RotateCcw className="w-4 h-4" /> {isMarathon ? 'Next Runner' : 'Start Over'}
         </button>
       </header>
 
       <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
         {/* Image */}
-        <div className="h-[60vh] lg:h-auto lg:flex-1 overflow-hidden flex-shrink-0 relative flex items-center justify-center bg-black">
+        <div className="h-[60vh] lg:h-auto lg:flex-1 overflow-hidden flex-shrink-0 relative flex items-center justify-center p-4 lg:p-8">
           {/* Celebration banner */}
           {showBanner && (
             <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 px-5 py-2.5 rounded-full text-sm font-bold shadow-2xl flex items-center gap-2 ${showBanner ? 'banner-in' : 'banner-out'} ${isMarathon ? 'bg-gradient-to-r from-[#0b6d41] to-[#16a34a] text-[#ffde59]' : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'}`}>
@@ -368,7 +392,7 @@ export default function ResultScreen({
 
           {/* Fixed 4:6 (2:3) frame — glow wrapper + reveal animation */}
           <div
-            className={`img-reveal rounded-lg overflow-hidden ${isMarathon ? 'glow-marathon' : 'glow-standard'}`}
+            className={`img-reveal rounded-2xl overflow-hidden bg-white border-[6px] border-white ${isMarathon ? 'glow-marathon' : 'glow-standard'}`}
             style={{ aspectRatio: '2/3', height: '100%', maxHeight: '100%', flexShrink: 0 }}
           >
             <img
@@ -378,34 +402,54 @@ export default function ResultScreen({
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
         </div>
 
         {/* Actions */}
-        <div className="print:hidden lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-4 lg:p-6 flex flex-col gap-3 lg:gap-4 overflow-y-auto bg-gray-950/80 backdrop-blur-sm">
+        <div className="print:hidden lg:w-[22rem] border-t lg:border-t-0 lg:border-l border-slate-200/80 p-4 lg:p-6 flex flex-col gap-3 overflow-y-auto bg-white/85 backdrop-blur-md">
+          {isMarathon && (
+            <div className="hidden lg:block mb-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Next step</p>
+              <p className="text-slate-700 text-sm mt-1">Send the poster to the runner, then start the next one.</p>
+            </div>
+          )}
 
           {/* Share / WhatsApp Button */}
-          <button onClick={handleWhatsAppShare} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 px-6 py-4 shadow-lg transition-all">
-            <MessageCircle className="w-5 h-5 text-white shrink-0" />
-            <span className="text-white font-semibold text-base">Share via WhatsApp</span>
+          <button onClick={handleWhatsAppShare} className="w-full flex flex-col items-center justify-center rounded-xl bg-[#25D366] hover:bg-[#1ebe5b] px-6 py-4 shadow-lg shadow-green-500/25 transition-colors">
+            <span className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-white shrink-0" />
+              <span className="text-white font-semibold text-base">
+                {isMarathon ? (whatsappOpened ? 'Send Again on WhatsApp' : 'Send to WhatsApp') : 'Share via WhatsApp'}
+              </span>
+            </span>
+            {isMarathon && cleanPhone && (
+              <span className="text-white/80 text-xs mt-0.5">to +{whatsappPhone}</span>
+            )}
           </button>
+          {isMarathon && whatsappOpened && (
+            <p className="text-center text-xs text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+              ✓ WhatsApp opened — press <b>Send</b> in the chat, then tap Next Runner
+            </p>
+          )}
 
-          <button onClick={() => setShowEdit(!showEdit)} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 px-6 py-4 shadow-lg transition-all">
-            <Wand2 className="w-5 h-5 text-white shrink-0" />
-            <span className="text-white font-semibold text-base">Edit with AI</span>
-          </button>
+          {/* Edit with AI — hidden for marathon: edits would drop the stamped official logos */}
+          {!isMarathon && (
+            <button onClick={() => setShowEdit(!showEdit)} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 px-6 py-4 shadow-lg transition-all">
+              <Wand2 className="w-5 h-5 text-white shrink-0" />
+              <span className="text-white font-semibold text-base">Edit with AI</span>
+            </button>
+          )}
 
-          {showEdit && (
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 space-y-3">
+          {!isMarathon && showEdit && (
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
               <Textarea
                 placeholder="Describe the edit you want..."
                 value={editPrompt}
                 onChange={(e) => setEditPrompt(e.target.value)}
-                className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 resize-none h-20"
+                className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 resize-none h-20"
               />
               <button
                 onClick={() => editFileRef.current?.click()}
-                className="flex items-center gap-2 text-xs text-gray-400 hover:text-purple-300 transition-colors"
+                className="flex items-center gap-2 text-xs text-slate-500 hover:text-purple-700 transition-colors"
               >
                 <Upload className="w-3 h-3" /> Add reference image
               </button>
@@ -413,7 +457,7 @@ export default function ResultScreen({
               {editRefs.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
                   {editRefs.map((img, i) => (
-                    <div key={i} className="relative w-12 h-12 rounded-lg overflow-hidden border border-white/20">
+                    <div key={i} className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-200">
                       <img src={img} alt="" className="w-full h-full object-cover" />
                       <button
                         onClick={() => setEditRefs((prev) => prev.filter((_, idx) => idx !== i))}
@@ -442,20 +486,52 @@ export default function ResultScreen({
             </button>
           )}
 
-          <button onClick={handleDownload} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-500 hover:to-purple-400 px-6 py-4 shadow-lg transition-all">
-            <Download className="w-5 h-5 text-white shrink-0" />
-            <span className="text-white font-semibold text-base">Download</span>
-          </button>
+          {/* Marathon: not happy with the poster? Retake the selfie or remake it from the same selfie */}
+          {isMarathon && (onRetake || onRegenerate) && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+              <p className="text-xs font-semibold text-slate-500 mb-2 px-1">Not happy with the poster?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {onRetake && (
+                  <button onClick={onRetake}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-white border border-orange-200 hover:bg-orange-50 text-orange-700 px-3 py-3 shadow-sm transition-colors">
+                    <Camera className="w-4 h-4 shrink-0" />
+                    <span className="font-semibold text-sm">Retake Selfie</span>
+                  </button>
+                )}
+                {onRegenerate && (
+                  <button onClick={onRegenerate}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-700 px-3 py-3 shadow-sm transition-colors">
+                    <Shuffle className="w-4 h-4 shrink-0" />
+                    <span className="font-semibold text-sm">New Poster</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
-          <button onClick={handlePrint} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 px-6 py-4 transition-all">
-            <Printer className="w-5 h-5 text-white shrink-0" />
-            <span className="text-white font-semibold text-base">Print</span>
-          </button>
+          {/* Secondary actions side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={handleDownload}
+              className="flex items-center justify-center gap-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-3.5 shadow-sm transition-colors">
+              <Download className="w-5 h-5 shrink-0" />
+              <span className="font-semibold text-sm">Download</span>
+            </button>
+            <button onClick={handlePrint}
+              className="flex items-center justify-center gap-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-3.5 shadow-sm transition-colors">
+              <Printer className="w-5 h-5 shrink-0" />
+              <span className="font-semibold text-sm">Print</span>
+            </button>
+          </div>
 
-          {/* Prominent Start Over — always visible at bottom */}
-          <button onClick={onStartOver} className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 px-6 py-4 shadow-lg transition-all mt-2">
+          {/* Prominent Next Runner / Start Over — always visible at bottom */}
+          <button onClick={onStartOver}
+            className={`w-full flex items-center justify-center gap-2 rounded-xl px-6 py-4 shadow-lg transition-colors mt-auto ${
+              isMarathon
+                ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-600/25'
+                : 'bg-slate-900 hover:bg-slate-800'
+            }`}>
             <RotateCcw className="w-5 h-5 text-white shrink-0" />
-            <span className="text-white font-semibold text-base">Start Over</span>
+            <span className="text-white font-bold text-base">{isMarathon ? 'Next Runner →' : 'Start Over'}</span>
           </button>
 
         </div>

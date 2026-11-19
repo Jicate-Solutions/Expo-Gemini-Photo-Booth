@@ -223,49 +223,68 @@ export default function AdminPage() {
   const totalGroups = expos.reduce((sum, e) => sum + (e.group_count || 0), 0);
 
   if (loading) {
-    return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>;
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-slate-500 text-sm">
+          <span className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          Loading...
+        </div>
+      </div>
+    );
   }
 
   if (view === 'login') {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
-            <a href="/" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-sm mb-6 transition-colors">
-              <LogOut className="w-4 h-4 rotate-180" /> Back to Booth
-            </a>
-            <div className="w-14 h-14 bg-purple-600/20 border border-purple-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-7 h-7 text-purple-400" />
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-sky-50 flex items-center justify-center p-4 text-slate-900">
+        {/* soft background accents */}
+        <div className="fixed -top-32 -right-32 w-96 h-96 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="fixed -bottom-32 -left-32 w-96 h-96 bg-sky-200/40 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative w-full max-w-sm">
+          <a href="/" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-emerald-700 text-sm mb-6 transition-colors">
+            <LogOut className="w-4 h-4 rotate-180" /> Back to Booth
+          </a>
+          <div className="bg-white/90 backdrop-blur border border-slate-200 rounded-3xl shadow-xl shadow-slate-200/60 p-8">
+            <div className="text-center mb-7">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/jkkn-logo.png" alt="JKKN" className="h-12 mx-auto mb-5 object-contain" />
+              <div className="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Lock className="w-6 h-6 text-emerald-600" />
+              </div>
+              <h1 className="text-slate-900 font-bold text-2xl tracking-tight">Admin Access</h1>
+              <p className="text-slate-500 text-sm mt-1">Expo Management Dashboard</p>
             </div>
-            <h1 className="text-white font-bold text-2xl">Admin Access</h1>
-            <p className="text-gray-500 text-sm mt-1">Expo Management Dashboard</p>
-          </div>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <input type="email" placeholder="Admin email" value={email} onChange={e => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 outline-none focus:border-purple-500/50" autoComplete="off" />
-            </div>
-            <div className="relative">
-              <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 outline-none focus:border-purple-500/50 pr-12" autoComplete="off" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Email</label>
+                <input type="email" placeholder="admin@example.com" value={email} onChange={e => setEmail(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition" autoComplete="off" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Password</label>
+                <div className="relative">
+                  <input type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition pr-12" autoComplete="off" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              {error && <p className="text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-sm text-center">{error}</p>}
+              <button type="submit" disabled={loading || !email || !password}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-semibold py-3 rounded-xl shadow-lg shadow-emerald-600/20 transition-colors">
+                {loading ? 'Checking...' : 'Login'}
               </button>
-            </div>
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-            <button type="submit" disabled={loading || !email || !password}
-              className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-semibold py-3 rounded-xl transition-colors">
-              {loading ? 'Checking...' : 'Login'}
-            </button>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {view === 'expos' && (
         <>
           <AdminHeader
@@ -277,7 +296,7 @@ export default function AdminPage() {
             onCreateExpo={() => setView('create-expo')}
             refreshing={refreshing}
           />
-          <div className="px-6 pt-5 pb-2">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-2">
             <StatsOverview
               totalExpos={totals.total_expos}
               activeExpos={activeExpos}
@@ -286,8 +305,9 @@ export default function AdminPage() {
               totalGroups={totalGroups}
             />
           </div>
-          <div className="px-6 pt-4 pb-2">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">All Expos</h2>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-3 flex items-baseline justify-between">
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">All Expos</h2>
+            <span className="text-xs text-slate-500">{expos.length} total</span>
           </div>
           <ExpoList expos={expos} onSelect={(id) => { setSelectedExpoId(id); setView('expo-detail'); }} onReactivate={handleReactivateExpo} />
         </>

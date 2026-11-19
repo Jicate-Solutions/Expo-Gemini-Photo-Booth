@@ -17,68 +17,58 @@ export default function StatsOverview({ totalExpos, activeExpos, totalVisitors, 
       value: activeExpos,
       subtext: `${totalExpos} total`,
       icon: CalendarDays,
-      color: 'purple',
-      gradient: 'from-purple-600/20 to-purple-600/5',
-      border: 'border-purple-500/20',
-      iconBg: 'bg-purple-600/20',
-      iconColor: 'text-purple-400',
-      valueColor: 'text-purple-300',
+      accent: 'from-emerald-500 to-teal-500',
+      iconBg: 'bg-emerald-50 border-emerald-100',
+      iconColor: 'text-emerald-600',
     },
     {
       label: 'Total Visitors',
       value: totalVisitors,
-      subtext: totalExpos > 0 ? `~${Math.round(totalVisitors / Math.max(activeExpos, 1))}/expo` : '—',
+      subtext: totalExpos > 0 ? `~${Math.round(totalVisitors / Math.max(activeExpos, 1))} per expo` : '—',
       icon: Users,
-      color: 'blue',
-      gradient: 'from-blue-600/20 to-blue-600/5',
-      border: 'border-blue-500/20',
-      iconBg: 'bg-blue-600/20',
-      iconColor: 'text-blue-400',
-      valueColor: 'text-blue-300',
+      accent: 'from-sky-500 to-blue-500',
+      iconBg: 'bg-sky-50 border-sky-100',
+      iconColor: 'text-sky-600',
     },
     {
       label: 'Photos Generated',
       value: totalPhotos,
-      subtext: totalVisitors > 0 ? `${(totalPhotos / totalVisitors).toFixed(1)} avg/visitor` : '—',
+      subtext: totalVisitors > 0 ? `${(totalPhotos / totalVisitors).toFixed(1)} avg per visitor` : '—',
       icon: Camera,
-      color: 'pink',
-      gradient: 'from-pink-600/20 to-pink-600/5',
-      border: 'border-pink-500/20',
-      iconBg: 'bg-pink-600/20',
-      iconColor: 'text-pink-400',
-      valueColor: 'text-pink-300',
+      accent: 'from-amber-400 to-orange-500',
+      iconBg: 'bg-amber-50 border-amber-100',
+      iconColor: 'text-amber-600',
     },
     {
       label: 'Total Groups',
       value: totalGroups,
-      subtext: totalExpos > 0 ? `~${Math.round(totalGroups / Math.max(activeExpos, 1))}/expo` : '—',
+      subtext: totalExpos > 0 ? `~${Math.round(totalGroups / Math.max(activeExpos, 1))} per expo` : '—',
       icon: Layers,
-      color: 'emerald',
-      gradient: 'from-emerald-600/20 to-emerald-600/5',
-      border: 'border-emerald-500/20',
-      iconBg: 'bg-emerald-600/20',
-      iconColor: 'text-emerald-400',
-      valueColor: 'text-emerald-300',
+      accent: 'from-violet-500 to-fuchsia-500',
+      iconBg: 'bg-violet-50 border-violet-100',
+      iconColor: 'text-violet-600',
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className={`relative overflow-hidden bg-gradient-to-br ${stat.gradient} border ${stat.border} rounded-2xl p-4`}
+          className="relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
         >
-          <div className="flex items-start justify-between mb-3">
-            <div className={`w-9 h-9 ${stat.iconBg} rounded-xl flex items-center justify-center`}>
-              <stat.icon className={`w-4.5 h-4.5 ${stat.iconColor}`} />
+          {/* thin accent bar */}
+          <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stat.accent}`} />
+          <div className="flex items-start justify-between mb-4">
+            <div className="text-slate-500 text-xs font-semibold uppercase tracking-wide">{stat.label}</div>
+            <div className={`w-9 h-9 ${stat.iconBg} border rounded-xl flex items-center justify-center`}>
+              <stat.icon className={`w-[18px] h-[18px] ${stat.iconColor}`} />
             </div>
           </div>
-          <div className={`text-2xl font-black ${stat.valueColor} mb-0.5`}>
+          <div className="text-3xl font-extrabold text-slate-900 tracking-tight tabular-nums">
             {stat.value.toLocaleString()}
           </div>
-          <div className="text-gray-400 text-xs font-medium">{stat.label}</div>
-          <div className="text-gray-600 text-[10px] mt-0.5">{stat.subtext}</div>
+          <div className="text-slate-400 text-xs mt-1">{stat.subtext}</div>
         </div>
       ))}
     </div>

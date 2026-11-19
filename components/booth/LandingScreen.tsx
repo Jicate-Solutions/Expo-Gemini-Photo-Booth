@@ -74,114 +74,129 @@ export default function LandingScreen({ onOpenCamera, onPhotoUpload, onLogout, e
     </div>
   );
 
-  // ── MARATHON FULL-SCREEN LAYOUT ──
+  // ── MARATHON LANDING (bright, stall-friendly) ──
   if (isMarathon) {
+    const steps = [
+      { n: 1, icon: '📝', title: 'Your details', desc: 'Name, bib & WhatsApp' },
+      { n: 2, icon: '🤳', title: 'Take a selfie', desc: 'Smile for the camera' },
+      { n: 3, icon: '🏅', title: 'Get your poster', desc: 'Sent to your WhatsApp' },
+    ];
+
     return (
-      <div className="h-screen text-white overflow-hidden relative flex flex-col"
-        style={{ background: 'linear-gradient(160deg, #020d07 0%, #062916 40%, #051a0e 70%, #020d07 100%)' }}>
-
-        {/* Background glows */}
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-[-100px] left-[-100px] w-[500px] h-[500px] rounded-full blur-3xl opacity-30 animate-pulse"
-            style={{ background: 'radial-gradient(circle, #0b6d41, transparent)', animationDuration: '3s' }} />
-          <div className="absolute bottom-[-100px] right-[-100px] w-[500px] h-[500px] rounded-full blur-3xl opacity-20 animate-pulse"
-            style={{ background: 'radial-gradient(circle, #ffde59, transparent)', animationDuration: '4s' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full blur-3xl opacity-10"
-            style={{ background: 'radial-gradient(circle, #0f8f56, transparent)' }} />
-        </div>
-
+      <div className="min-h-screen lg:h-screen text-slate-900 relative flex flex-col overflow-x-hidden bg-gradient-to-br from-emerald-50 via-white to-orange-50">
+        {/* soft background accents */}
+        <div className="fixed -top-32 -left-32 w-[28rem] h-[28rem] bg-emerald-200/50 rounded-full blur-3xl pointer-events-none" />
+        <div className="fixed -bottom-32 -right-32 w-[28rem] h-[28rem] bg-orange-200/50 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top bar */}
-        <div className="relative z-30 flex items-center justify-between px-4 py-2 border-b bg-black/40 backdrop-blur-sm"
-          style={{ borderColor: 'rgba(11,109,65,0.3)' }}>
-          <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: '#ffde59' }}>
-            🏃 {expoName}
-          </span>
-          <div className="flex items-center gap-2">
-            {onShowStats && (
-              <button onClick={onShowStats} className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition-colors">Stats</button>
-            )}
-            <button onClick={onLogout} className="text-xs text-gray-400 hover:text-red-400 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors">Logout</button>
-          </div>
-        </div>
-
-        {/* Top finish ribbon stripe */}
-        <div className="relative z-10 w-full h-5 flex-shrink-0 flex items-center justify-center"
-          style={{ background: 'repeating-linear-gradient(90deg, #0b6d41 0px, #0b6d41 30px, #ffde59 30px, #ffde59 60px)' }}>
-          <span className="text-[10px] font-black tracking-[0.3em] uppercase px-4 py-0.5 rounded-full text-white"
-            style={{ background: 'rgba(0,0,0,0.5)' }}>🏁 FINISH LINE 🏁</span>
-        </div>
-
-        {/* Main centered content */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center gap-5">
-
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold animate-pulse"
-            style={{ background: 'rgba(11,109,65,0.25)', border: '1px solid rgba(255,222,89,0.4)', color: '#ffde59', animationDuration: '3s' }}>
-            🏅 &nbsp;AI-Powered Marathon Experience
-          </div>
-
-          {/* Headline */}
-          <div>
-            <h1 className="font-black leading-tight" style={{ fontSize: 'clamp(3rem, 10vw, 5.5rem)' }}>
-              <span className="block text-white">Cross The</span>
-              <span className="block" style={{ color: '#ffde59', textShadow: '0 0 40px rgba(255,222,89,0.4)' }}>Finish Line!</span>
-            </h1>
-            <p className="text-gray-400 text-sm max-w-xs mx-auto leading-relaxed mt-2">
-              AI transforms your photo into a <span className="font-semibold" style={{ color: '#ffde59' }}>champion crossing the finish ribbon</span>
-            </p>
-          </div>
-
-          {/* 3 feature pills */}
-          <div className="flex items-center gap-2 flex-wrap justify-center">
-            {['🎀 Finish Ribbon', '⚡ 5s Transform', '📲 Share Free'].map((label) => (
-              <span key={label} className="text-xs px-3 py-1.5 rounded-full font-medium"
-                style={{ background: 'rgba(11,109,65,0.2)', border: '1px solid rgba(11,109,65,0.4)', color: '#a8e3c9' }}>
-                {label}
+        <header className="relative z-30 flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 bg-white/80 backdrop-blur-md border-b border-slate-200/80">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/marathon/yi-logo.png" alt="Yi Young Indians" className="h-9 w-auto object-contain" />
+            <span className="w-px h-7 bg-slate-300" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/jkkn-logo.png" alt="JKKN" className="h-8 w-auto object-contain" />
+            {expoName && (
+              <span className="hidden sm:inline-flex ml-2 items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> {expoName}
               </span>
-            ))}
+            )}
           </div>
-
-          {/* BIG CTA Button */}
-          <div className="relative w-full max-w-md">
-            {/* Pulsing rings */}
-            <div className="absolute inset-[-8px] rounded-[32px] opacity-30 animate-ping pointer-events-none"
-              style={{ border: '2px solid #ffde59', animationDuration: '2s' }} />
-            <div className="absolute inset-[-16px] rounded-[38px] opacity-15 animate-ping pointer-events-none"
-              style={{ border: '2px solid #0b6d41', animationDuration: '2s', animationDelay: '0.5s' }} />
-            <div className="absolute inset-0 rounded-3xl blur-2xl opacity-60 animate-pulse pointer-events-none"
-              style={{ background: 'linear-gradient(90deg, #0b6d41, #ffde59)', animationDuration: '2s' }} />
-            <button
-              onClick={onOpenCamera}
-              className="group relative w-full overflow-hidden rounded-3xl p-[2px] shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
-              style={{ background: 'linear-gradient(90deg, #ffde59, #0f8f56, #ffde59)' }}
-            >
-              <div className="relative flex items-center justify-center gap-5 rounded-[22px] px-8 py-7 transition-all duration-300"
-                style={{ background: 'linear-gradient(135deg, #042010, #0b6d41)' }}>
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0"
-                  style={{ background: 'rgba(255,222,89,0.15)', border: '2px solid rgba(255,222,89,0.5)', boxShadow: '0 0 20px rgba(255,222,89,0.3)' }}>📸</div>
-                <div className="text-left">
-                  <div className="font-black text-3xl leading-tight" style={{ color: '#ffde59', textShadow: '0 0 20px rgba(255,222,89,0.5)' }}>Open Camera</div>
-                  <div className="text-white/60 text-sm mt-1">Tap to create your victory moment</div>
-                </div>
-              </div>
-              <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onShowStats && (
+              <button onClick={onShowStats}
+                className="text-sm font-medium text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                Stats
+              </button>
+            )}
+            <button onClick={onLogout}
+              className="text-sm font-medium text-slate-600 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+              Logout
             </button>
           </div>
+        </header>
 
-          {/* Admin Dashboard link */}
-          <button
-            onClick={() => window.location.href = '/admin'}
-            className="relative z-10 text-xs text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors mt-1"
-          >
-            Admin Dashboard
-          </button>
+        {/* Finish-line strip */}
+        <div className="relative z-10 h-1.5 w-full flex-shrink-0"
+          style={{ background: 'repeating-linear-gradient(90deg, #0b6d41 0 24px, #f97316 24px 48px, #ffffff 48px 72px)' }} />
 
-        </div>
+        {/* Main */}
+        <main className="relative z-10 flex-1 min-h-0 w-full max-w-6xl mx-auto px-5 sm:px-8 py-8 lg:py-6 grid lg:grid-cols-[1.15fr_0.85fr] items-center gap-10 lg:gap-14">
+          {/* Left: message + CTA */}
+          <div className="text-center lg:text-left">
+            <span className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full">
+              🏃 Erode Marathon 2026
+            </span>
 
-        {/* Bottom finish ribbon stripe */}
-        <div className="relative z-10 w-full h-5 flex-shrink-0"
-          style={{ background: 'repeating-linear-gradient(90deg, #ffde59 0px, #ffde59 30px, #0b6d41 30px, #0b6d41 60px)', opacity: 0.7 }} />
+            <h1 className="mt-5 font-black tracking-tight leading-[1.02]" style={{ fontSize: 'clamp(2.6rem, 6vw, 4.6rem)' }}>
+              <span className="block text-slate-900">You crossed the</span>
+              <span className="block bg-gradient-to-r from-emerald-600 via-emerald-500 to-orange-500 bg-clip-text text-transparent pb-1">
+                finish line!
+              </span>
+            </h1>
+
+            <p className="mt-4 text-slate-600 text-base sm:text-lg max-w-lg mx-auto lg:mx-0 leading-relaxed">
+              Get your personalised <b className="text-slate-900">AI finisher poster</b> with your bib number —
+              sent straight to your WhatsApp.
+            </p>
+            <p className="mt-2 text-sm font-semibold text-orange-600">I choose a drug-free life! 💪</p>
+
+            {/* How it works */}
+            <div className="mt-7 grid grid-cols-3 gap-2.5 sm:gap-3 max-w-lg mx-auto lg:mx-0">
+              {steps.map(s => (
+                <div key={s.n} className="relative bg-white/90 border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-sm text-left">
+                  <span className="absolute -top-2.5 -left-2.5 w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shadow-md">
+                    {s.n}
+                  </span>
+                  <div className="text-2xl leading-none">{s.icon}</div>
+                  <div className="mt-2 text-sm font-bold text-slate-900 leading-tight">{s.title}</div>
+                  <div className="text-[11px] sm:text-xs text-slate-500 leading-snug mt-0.5">{s.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-8 max-w-lg mx-auto lg:mx-0">
+              <button
+                onClick={onOpenCamera}
+                className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white shadow-xl shadow-emerald-600/30 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <div className="flex items-center gap-4 px-6 py-5">
+                  <div className="w-14 h-14 rounded-xl bg-white/15 border border-white/30 flex items-center justify-center shrink-0">
+                    <Camera className="w-7 h-7" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <div className="font-black text-2xl leading-tight">Get My Poster</div>
+                    <div className="text-white/80 text-sm">Takes less than a minute</div>
+                  </div>
+                  <span className="text-2xl transition-transform group-hover:translate-x-1">→</span>
+                </div>
+                {/* shine sweep */}
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 pointer-events-none" />
+              </button>
+
+              <button
+                onClick={() => (window.location.href = '/admin')}
+                className="mt-4 text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors"
+              >
+                Admin Dashboard
+              </button>
+            </div>
+          </div>
+
+          {/* Right: sample poster */}
+          <div className="relative mx-auto w-full max-w-[18rem] sm:max-w-xs lg:max-w-[22rem] lg:h-full lg:max-h-[78vh] flex items-center">
+            <div className="absolute inset-6 bg-gradient-to-br from-emerald-300/60 to-orange-300/60 rounded-[2rem] blur-2xl" />
+            <div className="relative w-full rotate-[2deg] hover:rotate-0 transition-transform duration-500">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/marathon/sample-poster.jpg" alt="Sample Erode Marathon finisher poster"
+                className="w-full h-auto lg:max-h-[74vh] object-contain rounded-3xl border-[6px] border-white shadow-2xl bg-white" />
+              <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md">
+                ✨ Sample poster
+              </span>
+            </div>
+          </div>
+        </main>
 
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       </div>

@@ -1,19 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { buildMarathonPosterPrompt, getMarathonTemplateDataUrl, sanitizeGender, stampMarathonLogos } from '@/lib/marathonPoster';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 
 export async function POST(req: NextRequest) {
   try {
-    const { imageData, themePrompt, themeTitle, themeType, careerStyle, isEdit, referenceImages } = await req.json();
+    const body = await req.json();
+    const { imageData, themePrompt, themeType, careerStyle, isEdit, marathonPoster } = body;
+    let referenceImages: string[] = Array.isArray(body.referenceImages) ? body.referenceImages : [];
 
-    if (!imageData || !themePrompt) {
+    // Marathon poster: the server owns the prompt and the template, so they can't drift on the client
+    const isMarathonPoster = marathonPoster === true && !isEdit;
+    const origin = req.nextUrl.origin;
+
+    if (!imageData || (!themePrompt && !isMarathonPoster)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Build the prompt
-    let finalPrompt = themePrompt;
+    let finalPrompt = isMarathonPoster
+      ? buildMarathonPosterPrompt(body.userInfo?.bibNumber, sanitizeGender(body.userInfo?.gender))
+      : themePrompt;
     if (themeType === 'career' && careerStyle === 'photorealistic') {
       finalPrompt += ' Render as a hyper-realistic professional portrait with photographic quality.';
     } else if (themeType === 'career' && careerStyle === 'artistic') {
@@ -26,6 +35,11 @@ export async function POST(req: NextRequest) {
 
     // Enforce 4x6 portrait output (2:3 aspect ratio) for print compatibility
     finalPrompt += ' IMPORTANT: Generate the output image in portrait orientation with a 2:3 aspect ratio (width:height), like a 4x6 inch photo print.';
+
+    // Marathon poster: the template is the only reference image (it must be IMAGE 2 in the prompt)
+    if (isMarathonPoster) {
+      referenceImages = [await getMarathonTemplateDataUrl(origin)];
+    }
 
     const base64Image = imageData.split(',')[1];
     const mimeType = (imageData.split(';')[0].split(':')[1] as string) || 'image/jpeg';
@@ -51,7 +65,11 @@ export async function POST(req: NextRequest) {
         const response = await ai.models.generateContent({
           model: 'gemini-3.1-flash-image-preview',
           contents: [{ role: 'user', parts }],
-          config: { responseModalities: ['IMAGE', 'TEXT'] },
+          config: {
+            responseModalities: ['IMAGE', 'TEXT'],
+            // Lock the poster to 2:3 so the logo card lands in the same place every time
+            ...(isMarathonPoster ? { imageConfig: { aspectRatio: '2:3' } } : {}),
+          },
         });
 
         const responseParts = response.candidates?.[0]?.content?.parts;
@@ -60,8 +78,10 @@ export async function POST(req: NextRequest) {
         }
 
         for (const part of responseParts) {
-          if (part.inlineData) {
-            const transformedImage = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+          if (part.inlineData?.data) {
+            const transformedImage = isMarathonPoster
+              ? await stampMarathonLogos(part.inlineData.data, origin)
+              : `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
             return NextResponse.json({ transformedImage });
           }
         }
@@ -87,6 +107,10 @@ export async function POST(req: NextRequest) {
     console.error('Transform error after retries:', lastError);
     if (e?.status === 429) {
       return NextResponse.json({ error: 'Rate limit reached. Please try again in a moment.' }, { status: 429 });
+    }
+    if (e?.status === 402) {
+      // Billing problem (e.g. Gemini prepaid credits used up) — retrying won't help, so say so
+      return NextResponse.json({ error: 'AI service credits are used up. Please contact the booth admin.' }, { status: 402 });
     }
     return NextResponse.json({ error: 'Generation timed out. Please try again.' }, { status: 500 });
 

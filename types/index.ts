@@ -25,6 +25,10 @@ export interface UserInfo {
   mobile: string;
   group: string;
   groupId?: string;
+  /** Marathon expos only: the runner's race bib number */
+  bibNumber?: string;
+  /** Marathon expos only: picks the outfit (male = shorts, female = track pants) */
+  gender?: 'male' | 'female';
 }
 
 export interface AppState {

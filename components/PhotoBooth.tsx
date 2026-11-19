@@ -5,9 +5,9 @@ import { AppState, AppScreen, Theme, CareerStyle, UserInfo, BoothSession } from 
 import { STICKER_STORAGE_KEY, MAX_STICKERS, StickerImage } from '@/app/sticker-sheet/page';
 import LandingScreen from './booth/LandingScreen';
 import CameraScreen from './booth/CameraScreen';
-import UserInfoScreen from './booth/UserInfoScreen';
+import UserInfoScreen, { USER_INFO_DRAFT_KEY } from './booth/UserInfoScreen';
 import ThemeSelectionScreen from './booth/ThemeSelectionScreen';
-import MarathonScreen, { buildMarathonTheme } from './booth/MarathonScreen';
+import MarathonScreen, { buildMarathonTheme, MARATHON_THEME_ID } from './booth/MarathonScreen';
 import LoadingScreen from './booth/LoadingScreen';
 import ResultScreen from './booth/ResultScreen';
 import ErrorScreen from './booth/ErrorScreen';
@@ -34,6 +34,10 @@ export default function PhotoBooth() {
   const [session, setSession] = useState<BoothSession | null>(null);
   const [expoGroups, setExpoGroups] = useState<{ id: string; name: string }[]>([]);
   const [showStats, setShowStats] = useState(false);
+  // False until the saved login + screen have been read from sessionStorage.
+  // Until then we show a neutral splash instead of the login page, so a refresh
+  // doesn't flash "login" before jumping back to the current screen.
+  const [restored, setRestored] = useState(false);
 
   // Check booth login session on mount
   useEffect(() => {
@@ -62,16 +66,38 @@ export default function PhotoBooth() {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (!saved) return;
       const parsed = JSON.parse(saved) as AppState;
-      if (parsed.screen === 'loading') parsed.screen = 'themeSelection';
+      // The selfie isn't persisted (too big for storage), so any screen that needs it must
+      // fall back to a sensible place. Details (userInfo) ARE persisted and are kept.
+      let mode: string | undefined;
+      try { mode = (JSON.parse(sessionStorage.getItem('booth_session_data') || 'null') as BoothSession | null)?.expoMode; } catch { /* ignore */ }
+      const marathon = mode === 'marathon';
+      if (marathon) {
+        // Refreshed mid-generation or before the selfie → retake selfie with details kept
+        if (parsed.screen === 'loading' || parsed.screen === 'themeSelection' || parsed.screen === 'error') {
+          parsed.screen = parsed.userInfo ? 'camera' : 'userInfo';
+        }
+      } else if (parsed.screen === 'loading' || parsed.screen === 'themeSelection' || parsed.screen === 'userInfo') {
+        // Standard flow: photo comes first, so go back to the camera (typed details survive as a draft)
+        parsed.screen = 'camera';
+      }
       setState(parsed);
     } catch { /* ignore */ }
   }, []);
+
+  // Runs after the two restore effects above (effects run in order), so by the time this
+  // re-renders, the login and screen are already restored — no login-page flash.
+  useEffect(() => { setRestored(true); }, []);
 
   // Save state to sessionStorage on every change
   // Always strip large base64 fields (capturedPhoto, referenceImages) to avoid quota overflow.
   // transformedImageUrl is a Supabase public URL (small) so it persists fine.
   useEffect(() => {
+    // Skip the untouched initial state: on mount this effect runs right after the restore
+    // effect (twice in dev Strict Mode) and would otherwise overwrite the saved data with
+    // an empty state before the restored one is applied.
+    if (state === initialState) return;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { capturedPhoto, referenceImages, transformedImageUrl, ...rest } = state;
       const urlToSave = transformedImageUrl?.startsWith('data:') ? null : transformedImageUrl;
       const screenToSave = (!urlToSave && rest.screen === 'result') ? 'landing' : rest.screen;
@@ -96,37 +122,57 @@ export default function PhotoBooth() {
     sessionStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem('booth_session_data');
     sessionStorage.removeItem('booth_logged_in');
+    sessionStorage.removeItem(USER_INFO_DRAFT_KEY);
     setState(initialState);
     setSession(null);
     setBoothLoggedIn(false);
   };
 
   // Reset photo flow for a new user without logging out of the booth
+  // Marathon stall flow: details (name, bib, WhatsApp) → selfie → poster → send → next runner
+  const isMarathon = session?.expoMode === 'marathon';
+
   const resetForNextUser = () => {
-    setState({ ...initialState, screen: 'camera' });
+    // Marathon: next runner starts at the details form; other expos start at the camera
+    setState({ ...initialState, screen: isMarathon ? 'userInfo' : 'camera' });
     sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(USER_INFO_DRAFT_KEY); // fresh, empty form for the next visitor
   };
 
   const go = (screen: AppScreen, extra?: Partial<AppState>) =>
     setState((prev) => ({ ...prev, screen, ...extra }));
 
   const handlePhotoReady = (photo: string) => {
+    if (isMarathon && state.userInfo) {
+      // Details already filled in → generate the poster straight from the selfie
+      setState(prev => ({ ...prev, capturedPhoto: photo }));
+      handleTransform(buildMarathonTheme(), '', 'photorealistic', [], state.userInfo, photo);
+      return;
+    }
     go('userInfo', { capturedPhoto: photo });
   };
 
   const handleUserInfo = (info: UserInfo) => {
-    if (session?.expoMode === 'marathon') {
-      // Skip theme selection — directly transform with marathon theme
-      setState(prev => ({ ...prev, userInfo: info }));
-      handleTransform(buildMarathonTheme(info.name), '', 'photorealistic', [], info);
+    if (isMarathon) {
+      if (state.capturedPhoto) {
+        // Photo was uploaded before the details → generate right away
+        setState(prev => ({ ...prev, userInfo: info }));
+        handleTransform(buildMarathonTheme(), '', 'photorealistic', [], info);
+      } else {
+        // Normal stall flow: details first, then the selfie
+        go('camera', { userInfo: info });
+      }
     } else {
       go('themeSelection', { userInfo: info });
     }
   };
 
   const handleTransform = useCallback(
-    async (theme: Theme | null, customPrompt: string, careerStyle: CareerStyle, referenceImages: string[], userInfoOverride?: UserInfo) => {
-      if (!state.capturedPhoto) return;
+    async (theme: Theme | null, customPrompt: string, careerStyle: CareerStyle, referenceImages: string[], userInfoOverride?: UserInfo, photoOverride?: string) => {
+      // photoOverride: the marathon flow generates in the same tick the selfie is taken,
+      // before state.capturedPhoto has updated
+      const photo = photoOverride || state.capturedPhoto;
+      if (!photo) return;
 
       go('loading', { selectedTheme: theme, careerStyle, customPrompt, referenceImages });
 
@@ -140,7 +186,7 @@ export default function PhotoBooth() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            imageData: state.capturedPhoto,
+            imageData: photo,
             themePrompt: customPrompt ? `${themePrompt}. Additional instruction: ${customPrompt}` : themePrompt,
             themeTitle,
             themeType,
@@ -148,6 +194,7 @@ export default function PhotoBooth() {
             isEdit: false,
             referenceImages,
             userInfo,
+            marathonPoster: theme?.id === MARATHON_THEME_ID,
           }),
         });
 
@@ -199,11 +246,13 @@ export default function PhotoBooth() {
               group: userInfo.group,
               expoId: session?.expoId || null,
               groupId: userInfo?.groupId || null,
+              bibNumber: userInfo?.bibNumber || null,
+              gender: userInfo?.gender || null,
               theme: themeTitle,
               themeType,
               careerStyle,
               photoUrl: photoPublicUrl,
-              originalPhoto: state.capturedPhoto,
+              originalPhoto: photo,
             }),
           }).catch(e => console.error('Save user failed:', e));
         }
@@ -265,6 +314,15 @@ export default function PhotoBooth() {
     [state.transformedImageUrl]
   );
 
+  if (!restored) {
+    // Neutral splash for the split second before the saved session is known
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50">
+        <span className="w-8 h-8 border-[3px] border-emerald-500 border-t-transparent rounded-full animate-spin" aria-label="Loading" />
+      </div>
+    );
+  }
+
   if (!boothLoggedIn) {
     return <BoothLoginScreen onLogin={handleBoothLogin} />;
   }
@@ -283,7 +341,7 @@ export default function PhotoBooth() {
     case 'landing':
       return (
         <LandingScreen
-          onOpenCamera={() => go('camera')}
+          onOpenCamera={() => go(isMarathon ? 'userInfo' : 'camera')}
           onPhotoUpload={handlePhotoReady}
           onLogout={clearSession}
           expoName={session?.expoName}
@@ -296,17 +354,19 @@ export default function PhotoBooth() {
       return (
         <CameraScreen
           onCapture={handlePhotoReady}
-          onBack={() => go('landing')}
+          onBack={() => go(isMarathon ? 'userInfo' : 'landing')}
+          expoMode={session?.expoMode}
         />
       );
 
     case 'userInfo':
       return (
         <UserInfoScreen
-          capturedPhoto={state.capturedPhoto!}
+          capturedPhoto={state.capturedPhoto || undefined}
+          initialInfo={state.userInfo || undefined}
           groups={expoGroups}
           onNext={handleUserInfo}
-          onBack={() => go('camera')}
+          onBack={() => go(isMarathon ? 'landing' : 'camera')}
           expoMode={session?.expoMode}
         />
       );
@@ -328,7 +388,13 @@ export default function PhotoBooth() {
       );
 
     case 'loading':
-      return <LoadingScreen themeName={state.selectedTheme?.title || state.customPrompt || ''} />;
+      return (
+        <LoadingScreen
+          themeName={state.selectedTheme?.title || state.customPrompt || ''}
+          expoMode={session?.expoMode}
+          userName={state.userInfo?.name}
+        />
+      );
 
     case 'result':
       return (
@@ -341,6 +407,10 @@ export default function PhotoBooth() {
           onStartOver={resetForNextUser}
           onEdit={handleEdit}
           expoMode={session?.expoMode}
+          onRetake={isMarathon && state.userInfo ? () => go('camera', { capturedPhoto: null, transformedImageUrl: null }) : undefined}
+          onRegenerate={isMarathon && state.userInfo && state.capturedPhoto
+            ? () => handleTransform(buildMarathonTheme(), '', 'photorealistic', [], state.userInfo ?? undefined, state.capturedPhoto ?? undefined)
+            : undefined}
         />
       );
 
@@ -349,6 +419,9 @@ export default function PhotoBooth() {
         <ErrorScreen
           message={state.errorMessage}
           onStartOver={resetForNextUser}
+          // Marathon: keep the runner's name/bib/WhatsApp and just retake the selfie
+          onRetry={isMarathon && state.userInfo ? () => go('camera', { capturedPhoto: null }) : undefined}
+          startOverLabel={isMarathon ? 'Next Runner' : 'Start Over'}
         />
       );
 

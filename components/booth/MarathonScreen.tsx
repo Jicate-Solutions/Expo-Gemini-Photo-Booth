@@ -4,29 +4,20 @@ import { ArrowLeft, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CareerStyle, Theme } from '@/types';
 
-const TSHIRT_COLORS = ['red', 'blue', 'green', 'orange', 'purple', 'white', 'navy blue', 'maroon', 'teal', 'black'];
+export const MARATHON_THEME_ID = 'marathon-finish';
 
-export function buildMarathonTheme(userName: string): Theme {
-  const color = TSHIRT_COLORS[Math.floor(Math.random() * TSHIRT_COLORS.length)];
-  const nameOnShirt = userName.trim() || 'RUNNER';
+/**
+ * Erode Marathon 2026 poster theme. The actual prompt, poster template and real logos
+ * are handled server-side (lib/marathonPoster.ts) when the request has `marathonPoster: true`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function buildMarathonTheme(_userName?: string): Theme {
   return {
-    id: 'marathon-finish',
+    id: MARATHON_THEME_ID,
     title: 'Marathon Finish',
     type: 'fun',
     emoji: '🏅',
-    prompt:
-      'Transform this person into a triumphant marathon runner crossing the finish line. ' +
-      'Keep the person\'s face, skin tone, and features exactly as they appear in the photo — do not alter or cartoon-ify the face. ' +
-      'The person should have a natural, happy, proud smile — mouth relaxed or gently smiling, NOT wide open or shouting. ' +
-      `They must be wearing a ${color} regular short-sleeved crew-neck t-shirt (not sleeveless, not a tank top) ` +
-      `with the name "${nameOnShirt}" printed clearly on the chest of the t-shirt only. ` +
-      'The name must NOT appear anywhere else — not on the ribbon, not on the bib, not on any banner. ' +
-      'They are dramatically breaking through a plain white finish line ribbon/tape with both arms raised in victory. ' +
-      'The finish ribbon must be clean white with no text or names printed on it. ' +
-      'Show a plain race number bib over the t-shirt (bib number only, no name), a crowd of cheering spectators in the background, ' +
-      'confetti falling, and a large banner reading "FINISH" overhead. ' +
-      'Ultra-realistic, high resolution, photographic quality, shot on a DSLR camera, natural lighting, ' +
-      'no illustration, no cartoon, no painting — pure photorealism.',
+    prompt: 'Erode Marathon 2026 poster (prompt built on the server).',
   };
 }
 
