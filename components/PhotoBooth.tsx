@@ -19,6 +19,7 @@ const STORAGE_KEY = 'booth_session';
 const initialState: AppState = {
   screen: 'landing',
   capturedPhoto: null,
+  bodyPhoto: null,
   selectedTheme: null,
   careerStyle: 'photorealistic',
   customPrompt: '',
@@ -98,13 +99,14 @@ export default function PhotoBooth() {
     if (state === initialState) return;
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { capturedPhoto, referenceImages, transformedImageUrl, ...rest } = state;
+      const { capturedPhoto, bodyPhoto, referenceImages, transformedImageUrl, ...rest } = state;
       const urlToSave = transformedImageUrl?.startsWith('data:') ? null : transformedImageUrl;
       const screenToSave = (!urlToSave && rest.screen === 'result') ? 'landing' : rest.screen;
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
         ...rest,
         screen: screenToSave,
         capturedPhoto: null,
+        bodyPhoto: null,
         referenceImages: [],
         transformedImageUrl: urlToSave,
       }));
@@ -142,11 +144,11 @@ export default function PhotoBooth() {
   const go = (screen: AppScreen, extra?: Partial<AppState>) =>
     setState((prev) => ({ ...prev, screen, ...extra }));
 
-  const handlePhotoReady = (photo: string) => {
+  const handlePhotoReady = (photo: string, bodyPhoto: string | null = null) => {
     if (isMarathon && state.userInfo) {
-      // Details already filled in → generate the poster straight from the selfie
-      setState(prev => ({ ...prev, capturedPhoto: photo }));
-      handleTransform(buildMarathonTheme(), '', 'photorealistic', [], state.userInfo, photo);
+      // Details already filled in → generate the poster straight from the selfie (+ optional full-body photo)
+      setState(prev => ({ ...prev, capturedPhoto: photo, bodyPhoto }));
+      handleTransform(buildMarathonTheme(), '', 'photorealistic', [], state.userInfo, photo, bodyPhoto);
       return;
     }
     go('userInfo', { capturedPhoto: photo });
@@ -168,11 +170,12 @@ export default function PhotoBooth() {
   };
 
   const handleTransform = useCallback(
-    async (theme: Theme | null, customPrompt: string, careerStyle: CareerStyle, referenceImages: string[], userInfoOverride?: UserInfo, photoOverride?: string) => {
+    async (theme: Theme | null, customPrompt: string, careerStyle: CareerStyle, referenceImages: string[], userInfoOverride?: UserInfo, photoOverride?: string, bodyOverride?: string | null) => {
       // photoOverride: the marathon flow generates in the same tick the selfie is taken,
       // before state.capturedPhoto has updated
       const photo = photoOverride || state.capturedPhoto;
       if (!photo) return;
+      const bodyImage = bodyOverride !== undefined ? bodyOverride : state.bodyPhoto;
 
       go('loading', { selectedTheme: theme, careerStyle, customPrompt, referenceImages });
 
@@ -195,6 +198,7 @@ export default function PhotoBooth() {
             referenceImages,
             userInfo,
             marathonPoster: theme?.id === MARATHON_THEME_ID,
+            ...(theme?.id === MARATHON_THEME_ID && bodyImage ? { bodyImage } : {}),
           }),
         });
 
@@ -265,7 +269,7 @@ export default function PhotoBooth() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.capturedPhoto, state.userInfo, session]
+    [state.capturedPhoto, state.bodyPhoto, state.userInfo, session]
   );
 
   const handleEdit = useCallback(
@@ -356,6 +360,7 @@ export default function PhotoBooth() {
           onCapture={handlePhotoReady}
           onBack={() => go(isMarathon ? 'userInfo' : 'landing')}
           expoMode={session?.expoMode}
+          captureBody={isMarathon}
         />
       );
 
@@ -407,9 +412,9 @@ export default function PhotoBooth() {
           onStartOver={resetForNextUser}
           onEdit={handleEdit}
           expoMode={session?.expoMode}
-          onRetake={isMarathon && state.userInfo ? () => go('camera', { capturedPhoto: null, transformedImageUrl: null }) : undefined}
+          onRetake={isMarathon && state.userInfo ? () => go('camera', { capturedPhoto: null, bodyPhoto: null, transformedImageUrl: null }) : undefined}
           onRegenerate={isMarathon && state.userInfo && state.capturedPhoto
-            ? () => handleTransform(buildMarathonTheme(), '', 'photorealistic', [], state.userInfo ?? undefined, state.capturedPhoto ?? undefined)
+            ? () => handleTransform(buildMarathonTheme(), '', 'photorealistic', [], state.userInfo ?? undefined, state.capturedPhoto ?? undefined, state.bodyPhoto ?? null)
             : undefined}
         />
       );
@@ -420,7 +425,7 @@ export default function PhotoBooth() {
           message={state.errorMessage}
           onStartOver={resetForNextUser}
           // Marathon: keep the runner's name/bib/WhatsApp and just retake the selfie
-          onRetry={isMarathon && state.userInfo ? () => go('camera', { capturedPhoto: null }) : undefined}
+          onRetry={isMarathon && state.userInfo ? () => go('camera', { capturedPhoto: null, bodyPhoto: null }) : undefined}
           startOverLabel={isMarathon ? 'Next Runner' : 'Start Over'}
         />
       );

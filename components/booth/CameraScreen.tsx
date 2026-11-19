@@ -1,16 +1,22 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Camera, FlipHorizontal, ArrowLeft, VideoOff } from 'lucide-react';
+import { Camera, FlipHorizontal, ArrowLeft, VideoOff, User, RotateCcw } from 'lucide-react';
 
 interface CameraScreenProps {
-  onCapture: (photo: string) => void;
+  /** bodyPhoto is only set when captureBody is on and the runner didn't skip step 2 */
+  onCapture: (photo: string, bodyPhoto?: string | null) => void;
   onBack: () => void;
   expoMode?: string;
+  /** Marathon: after the face close-up, take a second full-body photo (skippable) */
+  captureBody?: boolean;
 }
 
-export default function CameraScreen({ onCapture, onBack, expoMode }: CameraScreenProps) {
+export default function CameraScreen({ onCapture, onBack, expoMode, captureBody = false }: CameraScreenProps) {
   const isMarathon = expoMode === 'marathon';
+  // Two-step capture: 'face' close-up first, then 'body' (stand back, whole body in frame)
+  const [step, setStep] = useState<'face' | 'body'>('face');
+  const [facePhoto, setFacePhoto] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -67,8 +73,10 @@ export default function CameraScreen({ onCapture, onBack, expoMode }: CameraScre
   };
 
   const capturePhoto = () => {
-    setCountdown(3);
-    let count = 3;
+    // Longer countdown for the full-body shot, so the runner can step back
+    const start = step === 'body' ? 5 : 3;
+    setCountdown(start);
+    let count = start;
     const interval = setInterval(() => {
       count--;
       if (count === 0) {
@@ -94,9 +102,30 @@ export default function CameraScreen({ onCapture, onBack, expoMode }: CameraScre
     }
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+    if (captureBody && step === 'face') {
+      // Keep the camera running for step 2
+      setFacePhoto(dataUrl);
+      setStep('body');
+      return;
+    }
     stopCamera();
-    onCapture(dataUrl);
+    if (captureBody && step === 'body') onCapture(facePhoto!, dataUrl);
+    else onCapture(dataUrl);
   };
+
+  const skipBody = () => {
+    if (!facePhoto) return;
+    stopCamera();
+    onCapture(facePhoto, null);
+  };
+
+  const retakeFace = () => {
+    setFacePhoto(null);
+    setStep('face');
+  };
+
+  const isBodyStep = captureBody && step === 'body';
 
   // Bright theme: marathon = JKKN green + orange, standard = purple/pink
   const T = isMarathon
@@ -126,7 +155,7 @@ export default function CameraScreen({ onCapture, onBack, expoMode }: CameraScre
           className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="font-bold text-lg text-slate-900 tracking-tight">{isMarathon ? 'Take Your Selfie' : 'Take a Photo'}</h1>
+        <h1 className="font-bold text-lg text-slate-900 tracking-tight">{captureBody ? (isBodyStep ? 'Step 2 of 2 · Full Body' : 'Step 1 of 2 · Face Close-up') : isMarathon ? 'Take Your Selfie' : 'Take a Photo'}</h1>
         {isMarathon && (
           <div className="ml-auto flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -159,6 +188,34 @@ export default function CameraScreen({ onCapture, onBack, expoMode }: CameraScre
           </div>
         ) : (
           <div className="relative w-full max-w-2xl">
+            {captureBody && (
+              <div className={`mb-4 flex items-center gap-3 rounded-2xl border px-4 py-3 ${isBodyStep ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-200'}`}>
+                {isBodyStep && facePhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={facePhoto} alt="Face photo" className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow" />
+                ) : (
+                  <span className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center"><Camera className="w-6 h-6" /></span>
+                )}
+                <div className="min-w-0 text-sm">
+                  {isBodyStep ? (
+                    <>
+                      <p className="font-bold text-orange-800">✓ Face done! Now step back 2–3 metres</p>
+                      <p className="text-orange-700/80">Your whole body — head to shoes — should fit in the frame</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-bold text-slate-900">Come close — face fills the circle</p>
+                      <p className="text-slate-500">Look at the camera, good light on your face</p>
+                    </>
+                  )}
+                </div>
+                {isBodyStep && (
+                  <button onClick={retakeFace} className="ml-auto shrink-0 flex items-center gap-1 text-xs font-semibold text-orange-700 hover:text-orange-900">
+                    <RotateCcw className="w-3.5 h-3.5" /> Retake face
+                  </button>
+                )}
+              </div>
+            )}
             {/* Video in a white frame */}
             <div className={`relative rounded-3xl overflow-hidden bg-slate-900 aspect-video border-[6px] border-white ring-1 ${T.frame} shadow-2xl shadow-slate-300/60`}>
               <video
@@ -179,7 +236,9 @@ export default function CameraScreen({ onCapture, onBack, expoMode }: CameraScre
               )}
               {/* Face guide */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className={`w-48 h-56 border-[3px] border-dashed ${T.guide} rounded-full`} />
+                {isBodyStep
+                  ? <div className={`h-[88%] aspect-[1/2.4] border-[3px] border-dashed ${T.guide} rounded-[40%]`} />
+                  : <div className={`w-48 h-56 border-[3px] border-dashed ${T.guide} rounded-full`} />}
               </div>
             </div>
             <canvas ref={canvasRef} className="hidden" />
@@ -207,10 +266,23 @@ export default function CameraScreen({ onCapture, onBack, expoMode }: CameraScre
                   </span>
                 </button>
               </div>
-              <div className="w-12 h-12" />
+              {isBodyStep ? (
+                <button
+                  onClick={skipBody}
+                  disabled={countdown !== null}
+                  title="Skip the full-body photo"
+                  className="h-12 px-4 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-sm flex items-center gap-1.5 text-sm font-semibold transition-colors disabled:opacity-40"
+                >
+                  <User className="w-4 h-4" /> Skip
+                </button>
+              ) : (
+                <div className="w-12 h-12" />
+              )}
             </div>
             <p className="text-center text-slate-500 text-sm mt-4">
-              Fit your face inside the circle, then tap the button — a 3-second countdown starts
+              {isBodyStep
+                ? 'Tap the button, then step back — a 5-second countdown gives you time. Skip if there is no space.'
+                : 'Fit your face inside the circle, then tap the button — a 3-second countdown starts'}
             </p>
           </div>
         )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { buildMarathonPosterPrompt, getMarathonTemplateDataUrl, sanitizeGender, stampMarathonLogos } from '@/lib/marathonPoster';
 import { generateWithOpenAI, ImageGenError } from '@/lib/openaiImage';
+import { sanitizeBottomWear } from '@/lib/marathonOptions';
 
 // High-quality image generation can take 30–60s+
 export const maxDuration = 120;
@@ -71,8 +72,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Build the prompt
+    // Marathon: optional full-body photo of the runner, so the poster keeps their real body shape
+    const bodyImage: string | null =
+      isMarathonPoster && typeof body.bodyImage === 'string' && body.bodyImage.startsWith('data:image/')
+        ? body.bodyImage
+        : null;
+
     let finalPrompt = isMarathonPoster
-      ? buildMarathonPosterPrompt(body.userInfo?.bibNumber, sanitizeGender(body.userInfo?.gender))
+      ? buildMarathonPosterPrompt({
+          bibNumber: body.userInfo?.bibNumber,
+          gender: sanitizeGender(body.userInfo?.gender),
+          // Printed on the runner's track pants / shorts
+          runnerName: body.userInfo?.name,
+          hasBodyPhoto: !!bodyImage,
+          tshirtColor: body.userInfo?.tshirtColor,
+          bottomWear: sanitizeBottomWear(body.userInfo?.bottomWear),
+        })
       : themePrompt;
     if (themeType === 'career' && careerStyle === 'photorealistic') {
       finalPrompt += ' Render as a hyper-realistic professional portrait with photographic quality.';
@@ -87,9 +102,10 @@ export async function POST(req: NextRequest) {
     // Enforce 4x6 portrait output (2:3 aspect ratio) for print compatibility
     finalPrompt += ' IMPORTANT: Generate the output image in portrait orientation with a 2:3 aspect ratio (width:height), like a 4x6 inch photo print.';
 
-    // Marathon poster: the template is the only reference image (it must be IMAGE 2 in the prompt)
+    // Marathon poster: [body photo,] then the template — matching the IMAGE numbers in the prompt
     if (isMarathonPoster) {
-      referenceImages = [await getMarathonTemplateDataUrl(origin)];
+      const template = await getMarathonTemplateDataUrl(origin);
+      referenceImages = bodyImage ? [bodyImage, template] : [template];
     }
 
     // IMAGE 1 = visitor photo, then reference images in order

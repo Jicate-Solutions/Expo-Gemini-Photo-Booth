@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, User, Search, Check, ChevronDown } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserInfo } from '@/types';
+import { TSHIRT_COLORS, RANDOM_COLOR, defaultBottomWear, findTshirtColor } from '@/lib/marathonOptions';
 
 /** sessionStorage key for the in-progress details form (survives a page refresh, cleared per visitor) */
 export const USER_INFO_DRAFT_KEY = 'booth_userinfo_draft';
@@ -211,7 +212,8 @@ export default function UserInfoScreen({ capturedPhoto, initialInfo, groups, onN
                           type="button"
                           role="radio"
                           aria-checked={selected}
-                          onClick={() => setForm({ ...form, gender: value })}
+                          // Picking a gender pre-selects its default bottom wear (women: track pants, men: shorts)
+                          onClick={() => setForm({ ...form, gender: value, bottomWear: defaultBottomWear(value) })}
                           className={`h-12 rounded-xl border-2 font-semibold flex items-center justify-center gap-2 transition-colors ${
                             selected
                               ? 'border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm'
@@ -224,6 +226,78 @@ export default function UserInfoScreen({ capturedPhoto, initialInfo, groups, onN
                     })}
                   </div>
                   {errors.gender && <p className={errCls}>{errors.gender}</p>}
+                </div>
+              )}
+
+              {/* Outfit — marathon only: bottom wear + t-shirt colour for the poster */}
+              {isMarathon && (
+                <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                  <div>
+                    <label className={labelCls}>Bottom wear</label>
+                    <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Bottom wear">
+                      {([['shorts', '🩳', 'Shorts'], ['track_pants', '👖', 'Track pants']] as const).map(([value, emoji, label]) => {
+                        const selected = (form.bottomWear ?? defaultBottomWear(form.gender)) === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => setForm({ ...form, bottomWear: value })}
+                            className={`h-11 rounded-xl border-2 font-semibold flex items-center justify-center gap-2 transition-colors ${
+                              selected
+                                ? 'border-emerald-500 bg-white text-emerald-800 shadow-sm'
+                                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                            }`}
+                          >
+                            <span className="text-lg">{emoji}</span> {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>
+                      T-shirt colour
+                      <span className="ml-2 font-normal text-slate-500">
+                        {findTshirtColor(form.tshirtColor)?.label ?? 'Surprise me'}
+                      </span>
+                    </label>
+                    <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="T-shirt colour">
+                      {TSHIRT_COLORS.map(c => {
+                        const selected = form.tshirtColor === c.id;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            aria-label={c.label}
+                            title={c.label}
+                            onClick={() => setForm({ ...form, tshirtColor: c.id })}
+                            className={`w-10 h-10 rounded-full border-2 border-white shadow-sm transition-transform hover:scale-110 ${
+                              selected ? 'ring-[3px] ring-emerald-500 ring-offset-2 scale-110' : 'ring-1 ring-slate-200'
+                            }`}
+                            style={{ backgroundColor: c.hex }}
+                          />
+                        );
+                      })}
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={!findTshirtColor(form.tshirtColor)}
+                        onClick={() => setForm({ ...form, tshirtColor: RANDOM_COLOR })}
+                        className={`h-10 px-3 rounded-full border-2 text-sm font-semibold transition-colors ${
+                          !findTshirtColor(form.tshirtColor)
+                            ? 'border-emerald-500 bg-white text-emerald-800'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                        }`}
+                      >
+                        🎲 Surprise me
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 

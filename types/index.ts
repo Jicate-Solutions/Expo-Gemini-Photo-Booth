@@ -29,11 +29,17 @@ export interface UserInfo {
   bibNumber?: string;
   /** Marathon expos only: picks the outfit (male = shorts, female = track pants) */
   gender?: 'male' | 'female';
+  /** Marathon only: t-shirt colour id from lib/marathonOptions, or 'random' */
+  tshirtColor?: string;
+  /** Marathon only: 'shorts' | 'track_pants' (women default to track pants) */
+  bottomWear?: 'shorts' | 'track_pants';
 }
 
 export interface AppState {
   screen: AppScreen;
   capturedPhoto: string | null;
+  /** Marathon only: optional full-body photo, so the poster keeps the runner's real body shape */
+  bodyPhoto?: string | null;
   selectedTheme: Theme | null;
   careerStyle: CareerStyle;
   customPrompt: string;
