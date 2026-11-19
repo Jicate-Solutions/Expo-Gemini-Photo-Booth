@@ -43,7 +43,7 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
       let s: MediaStream;
       try {
         s = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } },
         });
       } catch {
         // Fallback: try without facingMode constraint
@@ -74,7 +74,7 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
 
   const capturePhoto = () => {
     // Longer countdown for the full-body shot, so the runner can step back
-    const start = step === 'body' ? 5 : 3;
+    const start = step === 'body' ? 8 : 3;
     setCountdown(start);
     let count = start;
     const interval = setInterval(() => {
@@ -187,7 +187,11 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
             </div>
           </div>
         ) : (
-          <div className="relative w-full max-w-2xl">
+          <div
+            className={`relative w-full ${isBodyStep ? '' : 'max-w-2xl'}`}
+            // Body step: as big as the screen allows (16:9 video, leaving room for the banner + buttons)
+            style={isBodyStep ? { maxWidth: 'min(72rem, calc((100vh - 270px) * 16 / 9))' } : undefined}
+          >
             {captureBody && (
               <div className={`mb-4 flex items-center gap-3 rounded-2xl border px-4 py-3 ${isBodyStep ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-200'}`}>
                 {isBodyStep && facePhoto ? (
@@ -199,8 +203,8 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
                 <div className="min-w-0 text-sm">
                   {isBodyStep ? (
                     <>
-                      <p className="font-bold text-orange-800">✓ Face done! Now step back 2–3 metres</p>
-                      <p className="text-orange-700/80">Your whole body — head to shoes — should fit in the frame</p>
+                      <p className="font-bold text-orange-800">✓ Face done! Now the full-body photo</p>
+                      <p className="text-orange-700/80">Staff tap the button → runner walks back 2–3 m → 8-second countdown</p>
                     </>
                   ) : (
                     <>
@@ -227,18 +231,51 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
                 style={{ transform: mirrored ? 'scaleX(-1)' : 'none' }}
               />
               {/* Countdown overlay */}
-              {countdown !== null && (
+              {countdown !== null && !isBodyStep && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/30 backdrop-blur-[2px]">
                   <span className="w-36 h-36 rounded-full bg-white/90 shadow-2xl flex items-center justify-center text-slate-900 text-7xl font-black animate-pulse">
                     {countdown}
                   </span>
                 </div>
               )}
+              {/* Body step: huge corner countdown, readable from 3 m, without hiding the guide */}
+              {countdown !== null && isBodyStep && (
+                <div className="absolute top-4 right-4 z-20 pointer-events-none">
+                  <span className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-orange-500/90 text-white shadow-2xl flex items-center justify-center text-7xl sm:text-8xl font-black animate-pulse">
+                    {countdown}
+                  </span>
+                </div>
+              )}
               {/* Face guide */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                {isBodyStep
-                  ? <div className={`h-[88%] aspect-[1/2.4] border-[3px] border-dashed ${T.guide} rounded-[40%]`} />
-                  : <div className={`w-48 h-56 border-[3px] border-dashed ${T.guide} rounded-full`} />}
+                {isBodyStep ? (
+                  <>
+                    {/* Head line (top) and feet line (bottom): the whole body must be between them */}
+                    <div className="absolute left-0 right-0 top-[5%] border-t-[3px] border-dashed border-emerald-300/90">
+                      <span className="absolute left-3 -top-3.5 bg-emerald-500 text-white text-xs sm:text-sm font-bold px-2.5 py-0.5 rounded-full shadow">▼ HEAD here</span>
+                    </div>
+                    <div className="absolute left-0 right-0 bottom-[4%] border-t-[3px] border-dashed border-emerald-300/90">
+                      <span className="absolute left-3 -top-3.5 bg-emerald-500 text-white text-xs sm:text-sm font-bold px-2.5 py-0.5 rounded-full shadow">▲ FEET here</span>
+                    </div>
+                    {/* Person outline between the lines */}
+                    <svg viewBox="0 0 100 260" className="h-[89%] w-auto opacity-90" fill="none" aria-hidden="true">
+                      <g fill="rgba(255,255,255,0.08)" stroke="white" strokeWidth="2.2" strokeDasharray="5 4" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="50" cy="19" r="14" />
+                        <path d="M44 36 Q30 39 27 48 L20 118 Q22 125 27 120 L33 66 L34 130 L35 246 Q40 252 47 248 L49 142 Q50 138 51 142 L53 248 Q60 252 65 246 L66 130 L67 66 L73 120 Q78 125 80 118 L73 48 Q70 39 56 36 Z" />
+                      </g>
+                    </svg>
+                    {/* Big instruction, readable from a distance (hidden during the countdown) */}
+                    {countdown === null && (
+                      <div className="absolute top-[12%] left-1/2 -translate-x-1/2 w-[90%] text-center">
+                        <span className="inline-block bg-white/90 text-slate-900 font-extrabold text-lg sm:text-2xl px-5 py-2.5 rounded-2xl shadow-xl">
+                          Step back until your head &amp; feet fit between the lines
+                        </span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className={`w-48 h-56 border-[3px] border-dashed ${T.guide} rounded-full`} />
+                )}
               </div>
             </div>
             <canvas ref={canvasRef} className="hidden" />
@@ -281,7 +318,7 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
             </div>
             <p className="text-center text-slate-500 text-sm mt-4">
               {isBodyStep
-                ? 'Tap the button, then step back — a 5-second countdown gives you time. Skip if there is no space.'
+                ? 'Tap the button, then step back — an 8-second countdown gives you time. Stand straight, arms relaxed. Skip if there is no space.'
                 : 'Fit your face inside the circle, then tap the button — a 3-second countdown starts'}
             </p>
           </div>

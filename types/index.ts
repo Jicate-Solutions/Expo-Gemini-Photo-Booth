@@ -33,6 +33,8 @@ export interface UserInfo {
   tshirtColor?: string;
   /** Marathon only: 'shorts' | 'track_pants' (women default to track pants) */
   bottomWear?: 'shorts' | 'track_pants';
+  /** Marathon only: 'fit' = "Fit & Fab" (a little slimmer), 'real' = "Just Me" (default) */
+  bodyLook?: 'fit' | 'real';
 }
 
 export interface AppState {

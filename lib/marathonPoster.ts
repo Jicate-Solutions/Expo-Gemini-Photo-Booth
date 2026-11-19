@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
-import { TSHIRT_COLORS, findTshirtColor, defaultBottomWear, type BottomWear } from './marathonOptions';
+import { TSHIRT_COLORS, findTshirtColor, defaultBottomWear, type BottomWear, type BodyLook } from './marathonOptions';
 
 /**
  * Erode Marathon 2026 poster.
@@ -84,6 +84,8 @@ export interface MarathonPosterOptions {
   tshirtColor?: string;
   /** Defaults by gender: women track pants, men shorts */
   bottomWear?: BottomWear;
+  /** 'fit' = "Fit & Fab" (a little slimmer & toned), 'real' = "Just Me" (unchanged, default) */
+  bodyLook?: BodyLook;
 }
 
 export function buildMarathonPosterPrompt({
@@ -93,6 +95,7 @@ export function buildMarathonPosterPrompt({
   hasBodyPhoto = false,
   tshirtColor,
   bottomWear,
+  bodyLook = 'real',
 }: MarathonPosterOptions = {}): string {
   const printName = sanitizePrintName(runnerName);
   // Runner's real bib from the details form; random 4-digit fallback if missing
@@ -164,14 +167,37 @@ export function buildMarathonPosterPrompt({
     'Output: one high-resolution, sharp, flat full-bleed poster image (photorealistic person) in portrait 2:3 orientation.',
   ].join('\n');
 
-  return hasBodyPhoto ? withBodyPhoto(prompt) : prompt;
+  if (hasBodyPhoto) return withBodyPhoto(prompt, bodyLook);
+  // Face-only: the AI has to guess the body, so only the "Fit & Fab" choice adds a build hint
+  return bodyLook === 'fit'
+    ? prompt.replace(
+        "- Keep the person's age, gender and build as they appear in IMAGE 1.",
+        "- Keep the person's age and gender as they appear in IMAGE 1. Give them a fit, toned, slim-athletic runner's build that still suits their face and frame (if they already look thin, keep them as they are).",
+      )
+    : prompt;
 }
+
+/** Body rules per "finisher look" choice, used when a full-body photo is sent. */
+const BODY_RULES: Record<BodyLook, string[]> = {
+  // "Just Me": their real body, unchanged
+  real: [
+    "- Keep the person's REAL body from IMAGE 2 exactly: same height, weight, proportions, shoulder width, chest, belly, waist, hips, arms and legs.",
+    '- Do NOT slim, tone, or make the body more athletic. A fuller body stays fuller; a thin body stays thin.',
+  ],
+  // "Fit & Fab": a little slimmer and toned
+  fit: [
+    "- Base the runner's body on the person's REAL body from IMAGE 2: same height, proportions, shoulder width and frame. It must still clearly look like THEIR body.",
+    '- Make them look fit and fab: the waist and belly about 1 inch (2–3 cm) slimmer, arms and thighs a little slimmer and more toned, with an upright, confident athlete posture.',
+    '- Keep it believable: do NOT change their body type completely, do NOT make a fuller person look skinny, and do NOT add big muscles. Friends should still recognise their figure.',
+    '- If the person is ALREADY slim or thin, do NOT make them any thinner — keep their body exactly as it is.',
+  ],
+};
 
 /**
  * Rewrite the face-only prompt for 3 input images: 1 = face close-up, 2 = full-body photo, 3 = template.
- * The body photo gives the AI the runner's real build, so it doesn't have to guess (and slim) it.
+ * The body photo gives the AI the runner's real build, so it doesn't have to guess it.
  */
-function withBodyPhoto(prompt: string): string {
+function withBodyPhoto(prompt: string, bodyLook: BodyLook): string {
   return prompt
     .replace(/IMAGE 2/g, 'IMAGE 3')
     .replace('You are given two images.', 'You are given three images.')
@@ -186,10 +212,7 @@ function withBodyPhoto(prompt: string): string {
         "- Keep the person's age and gender as they appear in IMAGE 1.",
         '',
         'BODY SHAPE — FROM IMAGE 2:',
-        "- Base the runner's body on the person's REAL body from IMAGE 2: same height, proportions, shoulder width, chest, hips, arms and legs. It must still clearly look like THEIR body.",
-        '- Flatter them a LITTLE, like a proud finisher in good shape: make the waist and belly very slightly slimmer (about half an inch / 1–2 cm narrower) with a slightly more toned, upright, confident posture.',
-        '- Keep it subtle and natural: do NOT change their body type, do NOT make a fuller person look thin, and do NOT add big muscles. Friends should still recognise their figure.',
-        '- If the person is ALREADY slim or thin, do NOT make them any thinner — keep their body exactly as it is.',
+        ...BODY_RULES[bodyLook],
         '- Use IMAGE 2 ONLY for body shape. IGNORE its clothes, pose, background and lighting — dress the runner in the outfit described below, in the poster pose.',
         '- The face still comes from IMAGE 1 (sharper and closer).',
       ].join('\n'),

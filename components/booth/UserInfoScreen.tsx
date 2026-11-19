@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, User, Search, Check, ChevronDown } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserInfo } from '@/types';
-import { TSHIRT_COLORS, RANDOM_COLOR, defaultBottomWear, findTshirtColor } from '@/lib/marathonOptions';
+import { TSHIRT_COLORS, RANDOM_COLOR, defaultBottomWear, findTshirtColor, BODY_LOOKS, DEFAULT_BODY_LOOK } from '@/lib/marathonOptions';
 
 /** sessionStorage key for the in-progress details form (survives a page refresh, cleared per visitor) */
 export const USER_INFO_DRAFT_KEY = 'booth_userinfo_draft';
@@ -296,6 +296,32 @@ export default function UserInfoScreen({ capturedPhoto, initialInfo, groups, onN
                       >
                         🎲 Surprise me
                       </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>Your finisher look</label>
+                    <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Finisher look">
+                      {BODY_LOOKS.map(look => {
+                        const selected = (form.bodyLook ?? DEFAULT_BODY_LOOK) === look.id;
+                        return (
+                          <button
+                            key={look.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => setForm({ ...form, bodyLook: look.id })}
+                            className={`py-2.5 rounded-xl border-2 flex flex-col items-center justify-center transition-colors ${
+                              selected
+                                ? 'border-emerald-500 bg-white text-emerald-800 shadow-sm'
+                                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                            }`}
+                          >
+                            <span className="font-semibold flex items-center gap-1.5"><span className="text-lg">{look.emoji}</span> {look.label}</span>
+                            <span className={`text-xs ${selected ? 'text-emerald-700/80' : 'text-slate-400'}`}>{look.hint}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

@@ -41,3 +41,21 @@ export function findTshirtColor(id: unknown) {
 export function sanitizeBottomWear(input: unknown): BottomWear | undefined {
   return input === 'shorts' || input === 'track_pants' ? input : undefined;
 }
+
+/**
+ * Finisher look — how the body is drawn.
+ *  'fit'  = "Fit & Fab": a little slimmer and more toned (about an inch at the waist)
+ *  'real' = "Just Me": their real body, unchanged (default)
+ */
+export type BodyLook = 'fit' | 'real';
+
+export const BODY_LOOKS = [
+  { id: 'real', emoji: '😎', label: 'Just Me', hint: 'My real look' },
+  { id: 'fit', emoji: '🔥', label: 'Fit & Fab', hint: 'A little slimmer & toned' },
+] as const;
+
+export const DEFAULT_BODY_LOOK: BodyLook = 'real';
+
+export function sanitizeBodyLook(input: unknown): BodyLook {
+  return input === 'fit' ? 'fit' : 'real';
+}

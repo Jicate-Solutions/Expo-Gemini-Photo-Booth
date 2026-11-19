@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { buildMarathonPosterPrompt, getMarathonTemplateDataUrl, sanitizeGender, stampMarathonLogos } from '@/lib/marathonPoster';
 import { generateWithOpenAI, ImageGenError } from '@/lib/openaiImage';
-import { sanitizeBottomWear } from '@/lib/marathonOptions';
+import { sanitizeBottomWear, sanitizeBodyLook } from '@/lib/marathonOptions';
 
 // High-quality image generation can take 30–60s+
 export const maxDuration = 120;
@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
           hasBodyPhoto: !!bodyImage,
           tshirtColor: body.userInfo?.tshirtColor,
           bottomWear: sanitizeBottomWear(body.userInfo?.bottomWear),
+          bodyLook: sanitizeBodyLook(body.userInfo?.bodyLook),
         })
       : themePrompt;
     if (themeType === 'career' && careerStyle === 'photorealistic') {
