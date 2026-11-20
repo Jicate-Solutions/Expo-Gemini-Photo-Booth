@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Camera, Users, Briefcase, Star, Download, MessageCircle, ChevronDown, ChevronUp, Search, Pencil, Trash2 } from 'lucide-react';
+import { Camera, Users, Briefcase, Star, Download, MessageCircle, ChevronDown, ChevronUp, Search, Pencil, Trash2, Clapperboard } from 'lucide-react';
+import ReelsContest from '@/components/admin/ReelsContest';
 import { ExpoStats } from '@/types';
 import { Input } from '@/components/ui/input';
 
@@ -36,6 +37,20 @@ export default function ExpoDetail({ expoId, adminToken, isActive = true, onEdit
   const [searchQuery, setSearchQuery] = useState('');
   const [filterThemeType, setFilterThemeType] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  // Marathon expos also run the Reels Contest → show a second tab
+  const [hasReels, setHasReels] = useState(false);
+  const [tab, setTab] = useState<'booth' | 'reels'>('booth');
+
+  useEffect(() => {
+    setTab('booth');
+    fetch(`/api/expos/${expoId}`, { cache: 'no-store' })
+      .then(r => r.json())
+      .then(({ data }) => {
+        const meta = (data?.metadata ?? {}) as Record<string, unknown>;
+        setHasReels(meta.mode === 'marathon' || meta.reels_enabled === true);
+      })
+      .catch(() => setHasReels(false));
+  }, [expoId]);
 
   const loadData = () => {
     setLoading(true);
@@ -157,6 +172,24 @@ export default function ExpoDetail({ expoId, adminToken, isActive = true, onEdit
         )}
       </div>
 
+      {/* Tabs: Poster Booth | Reels Contest (marathon expos) */}
+      {hasReels && (
+        <div className="mt-5 inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+          {([['booth', Camera, 'Poster Booth'], ['reels', Clapperboard, 'Reels Contest']] as const).map(([id, Icon, label]) => (
+            <button key={id} onClick={() => setTab(id)}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                tab === id ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+              }`}>
+              <Icon className="w-4 h-4" /> {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === 'reels' && hasReels ? (
+        <ReelsContest expoId={expoId} adminToken={adminToken} />
+      ) : (
+      <>
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 py-5">
         {statCards.map(s => (
@@ -306,6 +339,8 @@ export default function ExpoDetail({ expoId, adminToken, isActive = true, onEdit
           </table>
         </div>
       </section>
+      </>
+      )}
     </div>
   );
 }
