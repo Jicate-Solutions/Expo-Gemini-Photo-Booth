@@ -463,19 +463,23 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
             <div className="mx-auto max-w-md px-4 pb-10">
         {/* Header: logos + language toggle */}
         <header className="flex items-center justify-between py-4">
-          <div className="flex items-center gap-2">
+          {/* Same 3 partner logos as the poster: Yi | JKKN | Erode Runners */}
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/marathon/yi-logo.png" alt="Yi" className="h-8 w-auto" />
-            <span className="w-px h-6 bg-slate-300" />
+            <img src="/marathon/yi-logo.png" alt="Yi Young Indians" className="h-7 sm:h-8 w-auto object-contain" />
+            <span className="w-px h-5 sm:h-6 bg-slate-300 shrink-0" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/jkkn-logo.png" alt="JKKN" className="h-7 w-auto" />
+            <img src="/jkkn-logo.png" alt="JKKN" className="h-6 sm:h-7 w-auto object-contain" />
+            <span className="w-px h-5 sm:h-6 bg-slate-300 shrink-0" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/marathon/erode-runners-logo.png" alt="Erode Runners" className="h-8 sm:h-9 w-auto object-contain" />
           </div>
-          <div className="flex rounded-full border-2 border-slate-200 bg-white p-0.5 text-sm font-bold">
+          <div className="flex shrink-0 rounded-full border-2 border-slate-200 bg-white p-0.5 text-xs sm:text-sm font-bold">
             {(['ta', 'en'] as const).map(l => (
               <button
                 key={l}
                 onClick={() => setLang(l)}
-                className={`px-3 py-1 rounded-full ${lang === l ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}
+                className={`px-2.5 sm:px-3 py-1 rounded-full ${lang === l ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}
               >
                 {l === 'ta' ? 'தமிழ்' : 'English'}
               </button>
