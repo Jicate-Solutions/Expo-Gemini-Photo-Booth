@@ -1,11 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
 
+/**
+ * Shown on the booth/admin when a new deploy is detected.
+ * The service worker uses skipWaiting + clientsClaim (app/sw.ts), so the new version is
+ * ALREADY active by the time this appears — "Update" just reloads the page to load it.
+ */
 export default function UpdatePrompt() {
+  const pathname = usePathname();
   const [showReload, setShowReload] = useState(false);
-  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
@@ -16,8 +22,8 @@ export default function UpdatePrompt() {
         if (!newWorker) return;
 
         newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            setWaitingWorker(newWorker);
+          // Only an UPDATE (a previous version was in control), not the very first install
+          if ((newWorker.state === 'installed' || newWorker.state === 'activated') && navigator.serviceWorker.controller) {
             setShowReload(true);
           }
         });
@@ -25,17 +31,8 @@ export default function UpdatePrompt() {
     });
   }, []);
 
-  function handleUpdate() {
-    if (!waitingWorker) return;
-    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
-    waitingWorker.addEventListener('statechange', () => {
-      if (waitingWorker.state === 'activated') {
-        window.location.reload();
-      }
-    });
-  }
-
-  if (!showReload) return null;
+  // Public visitor pages (reels contest QR) never show this
+  if (!showReload || pathname?.startsWith('/reels')) return null;
 
   return (
     <div className="fixed top-4 left-4 right-4 z-50 animate-in slide-in-from-top-4 duration-500">
@@ -45,7 +42,13 @@ export default function UpdatePrompt() {
         </div>
         <p className="text-white text-sm flex-1">A new version is available!</p>
         <button
-          onClick={handleUpdate}
+          onClick={() => setShowReload(false)}
+          className="flex-shrink-0 px-3 py-2 rounded-lg text-gray-300 hover:text-white text-sm transition-colors"
+        >
+          Later
+        </button>
+        <button
+          onClick={() => window.location.reload()}
           className="flex-shrink-0 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-sm transition-all"
         >
           Update

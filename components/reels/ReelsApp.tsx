@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AGE_GROUPS, AREAS, GENDERS, HELPLINES, PARTICIPANT_TYPES, CONTEST_HASHTAGS,
+  AGE_GROUPS, AREAS, GENDERS, HELPLINES, PARTICIPANT_TYPES,
   captionFor, normalizeMobile, surveyFor, type Lang, type Label, type Option,
 } from '@/lib/reels';
 
@@ -24,6 +24,22 @@ const t = {
     ta: 'மாரத்தான் மற்றும் அதன் செய்தி பற்றி ஒரு இன்ஸ்டாகிராம் ரீல் பதிவிடுங்கள். அதிக தாக்கம் ஏற்படுத்தும் ரீல்களுக்கு பரிசுகள்!',
   },
   register: { en: 'Register', ta: 'பதிவு செய்க' },
+  heyRunner: { en: 'Hey runner!', ta: 'வணக்கம் ரன்னர்!' },
+  tellUs: { en: "Tell us a little about you — it's quick!", ta: 'உங்களைப் பற்றி கொஞ்சம் சொல்லுங்கள் — சீக்கிரம் முடியும்!' },
+  allSet: { en: 'All set!', ta: 'தயார்!' },
+  namePh: { en: 'e.g. Priya Kumar', ta: 'எ.கா. பிரியா குமார்' },
+  niceToMeet: { en: 'Nice to meet you', ta: 'உங்களைச் சந்தித்ததில் மகிழ்ச்சி' },
+  liveNow: { en: 'Contest is live', ta: 'போட்டி நடைபெறுகிறது' },
+  step1: { en: 'Register & get your code', ta: 'பதிவு செய்து குறியீடு பெறுக' },
+  step2: { en: 'Post a 15–60s reel', ta: '15–60 விநாடி ரீல் பதிவிடுக' },
+  step3: { en: 'Submit & win prizes', ta: 'சமர்ப்பித்து பரிசு வெல்க' },
+  prizesTitle: { en: 'Win exciting prizes', ta: 'அசத்தலான பரிசுகள்' },
+  prizeFamily: { en: 'Best Family Reel', ta: 'சிறந்த குடும்ப ரீல்' },
+  prizeStudent: { en: 'Best Student Reel', ta: 'சிறந்த மாணவர் ரீல்' },
+  prizeMessage: { en: 'Most Impactful Message', ta: 'தாக்கமுள்ள செய்தி' },
+  certificates: { en: 'Certificate for every valid entry', ta: 'சரியான ஒவ்வொரு பதிவுக்கும் சான்றிதழ்' },
+  join: { en: 'Join the Challenge', ta: 'சவாலில் இணையுங்கள்' },
+  free: { en: 'Free to join · takes 1 minute', ta: 'இலவசம் · 1 நிமிடம் போதும்' },
   already: { en: 'Already registered? Get my code', ta: 'ஏற்கனவே பதிவு செய்தீர்களா? என் குறியீடு' },
   next: { en: 'Next', ta: 'அடுத்து' },
   back: { en: 'Back', ta: 'பின்செல்' },
@@ -126,6 +142,31 @@ const t = {
   inactive: { en: 'This contest link is not active.', ta: 'இந்தப் போட்டி இணைப்பு செயலில் இல்லை.' },
 } satisfies Record<string, Label | { en: string[]; ta: string[] }>;
 
+/** Animations for the fun welcome screen (injected raw so server and browser HTML match) */
+const REELS_CSS = `        @keyframes reels-float { 0%,100% { transform: translateY(0) rotate(0deg) } 50% { transform: translateY(-12px) rotate(8deg) } }
+        .reels-float { animation: reels-float 3.5s ease-in-out infinite; }
+        @keyframes reels-pick { 0% { transform: scale(1) } 40% { transform: scale(1.08) } 100% { transform: scale(1) } }
+        .reels-pick { animation: reels-pick .35s ease-out; }
+        @keyframes reels-wave { 0%,100% { transform: rotate(0) } 25% { transform: rotate(18deg) } 75% { transform: rotate(-10deg) } }
+        .reels-wave { display: inline-block; transform-origin: 70% 70%; animation: reels-wave 1.4s ease-in-out infinite; }
+        @keyframes reels-run { 0%,100% { transform: translateX(-50%) translateY(0) } 50% { transform: translateX(-50%) translateY(-6px) } }
+        .reels-run { animation: reels-run .45s ease-in-out infinite; }
+        @keyframes reels-road { from { transform: translateX(0) } to { transform: translateX(-28px) } }
+        .reels-road { animation: reels-road .35s linear infinite; }
+        @keyframes reels-pop { 0% { transform: translateY(0) scale(.6); opacity: 0 } 20% { opacity: 1 } 100% { transform: translateY(-70px) scale(1.2); opacity: 0 } }
+        .reels-pop { animation: reels-pop 1.8s ease-out infinite; }
+        @keyframes reels-heart { 0%,100% { transform: scale(1) } 50% { transform: scale(1.3) } }
+        .reels-heart { animation: reels-heart .9s ease-in-out infinite; }
+        @keyframes reels-bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+        .reels-bounce { display: inline-block; animation: reels-bounce 1.6s ease-in-out infinite; }
+        @keyframes reels-shine { 0% { left: -60% } 60%,100% { left: 130% } }
+        .reels-shine::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; left: -60%;
+          background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent); animation: reels-shine 2.6s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .reels-float, .reels-pick, .reels-wave, .reels-run, .reels-road, .reels-pop, .reels-heart, .reels-bounce, .reels-shine::after { animation: none; }
+        }
+`;
+
 const METRIC_FIELDS: { id: string; label: Label }[] = [
   { id: 'followers', label: { en: 'Followers', ta: 'பின்தொடர்பவர்கள்' } },
   { id: 'reach', label: { en: 'Accounts reached', ta: 'சென்றடைந்த கணக்குகள்' } },
@@ -154,19 +195,34 @@ const EMPTY_FORM: Form = {
 };
 
 const inputCls =
-  'w-full h-12 rounded-xl border-2 border-slate-200 bg-white px-4 text-base text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none';
+  'w-full h-12 rounded-2xl border-2 border-slate-200 bg-white px-4 text-base text-slate-900 placeholder:text-slate-400 transition focus:border-pink-400 focus:outline-none focus:ring-4 focus:ring-pink-100';
 const labelCls = 'block text-sm font-semibold text-slate-700 mb-1.5';
 const primaryBtn =
-  'w-full h-13 py-3.5 rounded-2xl bg-emerald-600 text-white text-base font-bold shadow-lg shadow-emerald-600/25 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-60 transition';
+  'reels-shine relative overflow-hidden w-full py-3.5 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-pink-500 to-orange-400 text-white text-base font-black shadow-lg shadow-pink-500/30 active:scale-[0.98] disabled:opacity-60 transition';
 const ghostBtn = 'w-full py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 font-semibold hover:bg-slate-50';
 
-function Chips({ options, value, onChange, lang, cols = 2 }: {
-  options: Option[]; value: string; onChange: (v: string) => void; lang: Lang; cols?: 2 | 3;
+/** Each question sits in its own card (red outline when it needs fixing) */
+const qCard = (hasError?: boolean) =>
+  `rounded-3xl border-2 bg-white p-4 shadow-sm transition-colors ${hasError ? 'border-red-300 bg-red-50/40' : 'border-slate-100'}`;
+const qTitle = 'mb-3 flex items-center gap-2 text-sm font-black text-slate-800';
+const qIcon = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-lg';
+
+/** Fun emoji on each answer button */
+const OPTION_EMOJI: Record<string, string> = {
+  under_18: '🧒', '18_25': '🧑‍🎓', '26_40': '🧑‍💼', '41_60': '🧔', '60_plus': '👴',
+  male: '👨', female: '👩', other: '🙂',
+  erode_town: '🏙️', nearby_town: '🏡', outside_district: '🚌',
+  student: '🎓', working_professional: '💼', parent: '👨‍👩‍👧', teacher: '👩‍🏫', others: '🙌',
+};
+
+function Chips({ options, value, onChange, lang, cols = 2, emoji = false }: {
+  options: Option[]; value: string; onChange: (v: string) => void; lang: Lang; cols?: 2 | 3; emoji?: boolean;
 }) {
   return (
     <div className={`grid gap-2 ${cols === 3 ? 'grid-cols-3' : 'grid-cols-2'}`} role="radiogroup">
       {options.map(o => {
         const on = value === o.id;
+        const icon = emoji ? OPTION_EMOJI[o.id] : undefined;
         return (
           <button
             key={o.id}
@@ -174,14 +230,50 @@ function Chips({ options, value, onChange, lang, cols = 2 }: {
             role="radio"
             aria-checked={on}
             onClick={() => onChange(on ? '' : o.id)}
-            className={`min-h-11 px-2 py-2 rounded-xl border-2 text-sm font-semibold transition-colors ${
-              on ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-600'
+            className={`relative min-h-11 px-2 py-2 rounded-2xl border-2 text-sm font-bold transition-all ${
+              on
+                ? 'reels-pick border-pink-400 bg-gradient-to-br from-fuchsia-50 to-orange-50 text-pink-700 shadow-md shadow-pink-200'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-pink-200 active:scale-95'
             }`}
           >
+            {on && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-[11px] text-white shadow">✓</span>
+            )}
+            {icon && <span className="block text-2xl leading-none mb-1">{icon}</span>}
             {o.label[lang]}
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Runner moving along a track: You → Survey → Your code */
+function JourneyBar({ stage, lang }: { stage: 0 | 1 | 2; lang: Lang }) {
+  const stops: Label[] = [
+    { en: 'You', ta: 'நீங்கள்' },
+    { en: 'Survey', ta: 'கணக்கெடுப்பு' },
+    { en: 'Your code', ta: 'குறியீடு' },
+  ];
+  const pct = [8, 50, 92][stage];
+  return (
+    <div className="mb-5">
+      <div className="relative h-9">
+        <div className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-slate-100" />
+        <div
+          className="absolute left-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-gradient-to-r from-fuchsia-500 via-pink-500 to-orange-400 transition-all duration-700"
+          style={{ width: `${pct}%` }}
+        />
+        <span className="reels-run absolute top-0 text-2xl transition-all duration-700" style={{ left: `${pct}%` }} aria-hidden>
+          🏃
+        </span>
+        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-xl" aria-hidden>🏁</span>
+      </div>
+      <div className="mt-1 flex justify-between text-[11px] font-bold">
+        {stops.map((s, i) => (
+          <span key={i} className={i <= stage ? 'text-pink-600' : 'text-slate-400'}>{s[lang]}</span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -229,6 +321,17 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
   useEffect(() => {
     try { localStorage.setItem('reels:lang', lang); } catch { /* ignore */ }
   }, [lang]);
+
+  // Live "filled X of 6" meter on the details header (the 6 required answers)
+  const filled = [
+    form.fullName.trim().length >= 2,
+    !!normalizeMobile(form.mobile),
+    !!form.ageGroup && (form.ageGroup !== 'under_18' || form.guardianConsent),
+    !!form.area,
+    !!form.participantType,
+    form.privacyAccepted,
+  ].filter(Boolean).length;
+  const firstName = form.fullName.trim().split(/\s+/)[0] ?? '';
 
   // Survey questions depend on participant type (parents / students get extra ones)
   const questions = useMemo(() => surveyFor(form.participantType), [form.participantType]);
@@ -354,8 +457,10 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
   const err = (k: string) => errors[k] && <p className="mt-1 text-sm text-red-600">{L('required')}</p>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-orange-50 text-slate-900">
-      <div className="mx-auto max-w-md px-4 pb-10">
+    <div className="min-h-screen bg-gradient-to-b from-fuchsia-50 via-white to-amber-50 text-slate-900">
+      {/* Animations for the fun welcome screen */}
+      <style dangerouslySetInnerHTML={{ __html: REELS_CSS }} />
+            <div className="mx-auto max-w-md px-4 pb-10">
         {/* Header: logos + language toggle */}
         <header className="flex items-center justify-between py-4">
           <div className="flex items-center gap-2">
@@ -383,91 +488,229 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
             <p className="text-lg font-bold">{L('inactive')}</p>
           </div>
         ) : (
-          <main className="rounded-3xl bg-white/95 p-5 shadow-xl shadow-slate-200/70 border border-slate-100">
-            {/* ── 1. Welcome ── */}
+          <main
+            className={
+              step === 'welcome'
+                ? '' // the welcome screen draws its own colourful cards
+                : 'rounded-3xl bg-white/95 p-5 shadow-xl shadow-slate-200/70 border border-slate-100'
+            }
+          >
+            {/* ── 1. Welcome: fun, Instagram-style landing ── */}
             {step === 'welcome' && (
-              <div className="text-center">
-                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-pink-500 text-4xl shadow-lg">🎬</div>
-                <h1 className="text-2xl font-black">{L('title')}</h1>
-                <p className="mt-1 font-semibold text-emerald-700">{L('tagline')}</p>
-                {expo && <p className="mt-1 text-xs text-slate-400">{expo.name}</p>}
-                <p className="mt-4 text-slate-600">{L('intro')}</p>
-                <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  {CONTEST_HASHTAGS.map(h => (
-                    <span key={h} className="rounded-full bg-orange-100 px-3 py-1 text-sm font-bold text-orange-700">{h}</span>
+              <div className="space-y-5 text-center">
+                {/* Hero */}
+                <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-fuchsia-600 via-pink-500 to-orange-400 px-5 pb-6 pt-7 text-white shadow-2xl shadow-pink-500/30">
+                  {/* Floating emojis */}
+                  {['🏃‍♀️', '❤️', '🔥', '🎬', '🏅', '✨', '📱', '💪'].map((e, i) => (
+                    <span
+                      key={i}
+                      aria-hidden
+                      className="reels-float pointer-events-none absolute select-none text-2xl opacity-80"
+                      style={{
+                        left: `${[6, 82, 14, 88, 4, 70, 46, 92][i]}%`,
+                        top: `${[8, 6, 46, 40, 78, 82, 3, 64][i]}%`,
+                        animationDelay: `${i * 0.45}s`,
+                        animationDuration: `${3.2 + (i % 3) * 0.7}s`,
+                      }}
+                    >
+                      {e}
+                    </span>
                   ))}
-                </div>
-                <div className="mt-6 space-y-3">
-                  <button className={primaryBtn} onClick={() => go('details')}>{L('register')} →</button>
-                  <button className={ghostBtn} onClick={() => go('lookup')}>{L('already')}</button>
+
+                  <span className="relative inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-400" /> {L('liveNow')}
+                  </span>
+                  <h1 className="relative mt-3 text-[2.1rem] font-black leading-[1.05] drop-shadow-sm">
+                    {L('title')}
+                  </h1>
+                  <p className="relative mt-2 text-base font-semibold text-white/90">{L('tagline')}</p>
+
+                  {/* Phone mock-up playing a "reel" */}
+                  <div className="relative mx-auto mt-6 h-64 w-36 rotate-[-4deg] rounded-[1.7rem] border-[5px] border-slate-900 bg-slate-900 shadow-2xl">
+                    <div className="absolute left-1/2 top-1.5 z-10 h-1.5 w-10 -translate-x-1/2 rounded-full bg-slate-700" />
+                    <div className="relative h-full w-full overflow-hidden rounded-[1.3rem] bg-gradient-to-b from-sky-400 via-emerald-400 to-emerald-600">
+                      {/* Road + runner */}
+                      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-slate-700/60" />
+                      <div className="reels-road absolute bottom-[16%] left-0 h-1 w-[200%] bg-[repeating-linear-gradient(90deg,#fff_0_14px,transparent_14px_28px)]" />
+                      <span className="reels-run absolute bottom-[22%] left-1/2 -translate-x-1/2 text-5xl">🏃‍♂️</span>
+                      <span className="absolute left-2 top-5 rounded bg-black/40 px-1.5 py-0.5 text-[9px] font-bold">Reels</span>
+                      {/* Side actions with popping hearts */}
+                      <div className="absolute bottom-10 right-1.5 flex flex-col items-center gap-2 text-sm">
+                        <span className="reels-heart">❤️</span>
+                        <span>💬</span>
+                        <span>📤</span>
+                      </div>
+                      <span className="reels-pop absolute bottom-24 right-2 text-lg">❤️</span>
+                      <span className="reels-pop absolute bottom-24 right-4 text-base" style={{ animationDelay: '0.8s' }}>💖</span>
+                      <p className="absolute bottom-2 left-2 right-8 text-left text-[9px] font-bold leading-tight">
+                        #ERDMRTHN001
+                        <br />#DrugFreeTN
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* 3 simple steps */}
+                <section className="grid grid-cols-3 gap-2">
+                  {([
+                    ['📝', 'step1', 'from-emerald-400 to-teal-500'],
+                    ['🎥', 'step2', 'from-fuchsia-500 to-pink-500'],
+                    ['🏆', 'step3', 'from-amber-400 to-orange-500'],
+                  ] as const).map(([icon, key, grad], i) => (
+                    <div key={key} className="relative rounded-2xl bg-white p-3 shadow-lg shadow-slate-200/80">
+                      <span className="absolute -top-2 left-2 rounded-full bg-slate-900 px-1.5 text-[10px] font-black text-white">{i + 1}</span>
+                      <div className={`mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${grad} text-2xl shadow`}>
+                        {icon}
+                      </div>
+                      <p className="mt-2 text-xs font-bold leading-snug text-slate-700">{L(key)}</p>
+                    </div>
+                  ))}
+                </section>
+
+                {/* Prizes */}
+                <section className="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 p-4 ring-1 ring-amber-200">
+                  <p className="text-sm font-black uppercase tracking-wider text-amber-700">🎁 {L('prizesTitle')}</p>
+                  <div className="mt-3 flex items-end justify-center gap-3">
+                    <span className="reels-bounce text-3xl" style={{ animationDelay: '0.2s' }}>🥈</span>
+                    <span className="reels-bounce text-5xl">🥇</span>
+                    <span className="reels-bounce text-3xl" style={{ animationDelay: '0.4s' }}>🥉</span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap justify-center gap-1.5 text-xs font-bold">
+                    <span className="rounded-full bg-white px-2.5 py-1 text-slate-700 shadow-sm">👨‍👩‍👧 {L('prizeFamily')}</span>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-slate-700 shadow-sm">🎓 {L('prizeStudent')}</span>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-slate-700 shadow-sm">💡 {L('prizeMessage')}</span>
+                  </div>
+                  <p className="mt-2 text-xs text-amber-800/80">📜 {L('certificates')}</p>
+                </section>
+
+                {/* Call to action */}
+                <div className="space-y-3 pt-1">
+                  <button
+                    onClick={() => go('details')}
+                    className="reels-shine relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-fuchsia-600 via-pink-500 to-orange-400 py-4 text-lg font-black text-white shadow-xl shadow-pink-500/30 active:scale-[0.98] transition"
+                  >
+                    {L('join')} 🚀
+                  </button>
+                  <button className={ghostBtn} onClick={() => go('lookup')}>🔑 {L('already')}</button>
+                  <p className="text-xs text-slate-400">{L('free')}</p>
                 </div>
               </div>
             )}
 
             {/* ── 2. Details (Section A) ── */}
             {step === 'details' && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-black">{L('yourDetails')}</h2>
-                <div>
-                  <label className={labelCls}>{L('fullName')} *</label>
-                  <input className={inputCls} value={form.fullName} autoComplete="name"
-                    onChange={e => setForm({ ...form, fullName: e.target.value })} />
-                  {err('fullName')}
-                </div>
-                <div>
-                  <label className={labelCls}>{L('mobile')} *</label>
-                  <input className={inputCls} value={form.mobile} inputMode="numeric" autoComplete="tel" maxLength={14}
-                    placeholder="98765 43210" onChange={e => setForm({ ...form, mobile: e.target.value })} />
-                  {err('mobile')}
-                </div>
-                <div>
-                  <label className={labelCls}>{L('ageGroup')} *</label>
-                  <Chips options={AGE_GROUPS} value={form.ageGroup} lang={lang} cols={3}
-                    onChange={v => setForm({ ...form, ageGroup: v, guardianConsent: false })} />
-                  {err('ageGroup')}
-                </div>
-                {form.ageGroup === 'under_18' && (
-                  <label className={`flex gap-3 rounded-xl border-2 p-3 text-sm ${errors.guardianConsent ? 'border-red-300 bg-red-50' : 'border-orange-200 bg-orange-50'}`}>
-                    <input type="checkbox" className="mt-0.5 h-5 w-5 accent-emerald-600" checked={form.guardianConsent}
-                      onChange={e => setForm({ ...form, guardianConsent: e.target.checked })} />
-                    <span>{L('guardian')}</span>
-                  </label>
-                )}
-                <div>
-                  <label className={labelCls}>{L('gender')}</label>
-                  <Chips options={GENDERS} value={form.gender} lang={lang} cols={3}
-                    onChange={v => setForm({ ...form, gender: v })} />
-                </div>
-                <div>
-                  <label className={labelCls}>{L('area')} *</label>
-                  <Chips options={AREAS} value={form.area} lang={lang} cols={3}
-                    onChange={v => setForm({ ...form, area: v })} />
-                  {err('area')}
-                </div>
-                <div>
-                  <label className={labelCls}>{L('type')} *</label>
-                  <Chips options={PARTICIPANT_TYPES} value={form.participantType} lang={lang}
-                    onChange={v => setForm({ ...form, participantType: v })} />
-                  {err('participantType')}
-                </div>
-                <div>
-                  <label className={labelCls}>{L('instagram')}</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">@</span>
-                    <input className={`${inputCls} pl-8`} value={form.instagram} autoCapitalize="none" autoCorrect="off"
-                      onChange={e => setForm({ ...form, instagram: e.target.value })} />
+              <div>
+                <JourneyBar stage={0} lang={lang} />
+
+                {/* Fun header with a live "filled X of 6" meter */}
+                <div className="relative mb-5 overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-600 via-pink-500 to-orange-400 p-5 text-white shadow-lg shadow-pink-500/25">
+                  <span aria-hidden className="reels-float absolute right-3 top-2 text-4xl opacity-90">📝</span>
+                  <h2 className="text-2xl font-black leading-tight">
+                    {L('heyRunner')} <span className="reels-wave">👋</span>
+                  </h2>
+                  <p className="mt-1 text-sm font-semibold text-white/90">{L('tellUs')}</p>
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/25">
+                      <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${(filled / 6) * 100}%` }} />
+                    </div>
+                    <span className="text-xs font-black tabular-nums">
+                      {filled === 6 ? `🎉 ${L('allSet')}` : `${filled}/6`}
+                    </span>
                   </div>
-                  {errors.instagram && <p className="mt-1 text-sm text-red-600">@username</p>}
                 </div>
-                <label className={`flex gap-3 rounded-xl border-2 p-3 text-xs text-slate-600 ${errors.privacyAccepted ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}>
-                  <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-600" checked={form.privacyAccepted}
-                    onChange={e => setForm({ ...form, privacyAccepted: e.target.checked })} />
-                  <span>{L('privacy')}</span>
-                </label>
-                {message && <p className="text-sm font-semibold text-red-600">{message}</p>}
-                <div className="flex gap-3 pt-1">
+
+                <div className="space-y-3">
+                  {/* Name */}
+                  <div className={qCard(errors.fullName)}>
+                    <p className={qTitle}><span className={qIcon}>😊</span>{L('fullName')} <span className="text-pink-500">*</span></p>
+                    <input className={inputCls} value={form.fullName} autoComplete="name" placeholder={L('namePh')}
+                      onChange={e => setForm({ ...form, fullName: e.target.value })} />
+                    {firstName.length >= 2 && (
+                      <p className="mt-2 text-sm font-bold text-pink-600">{L('niceToMeet')}, {firstName}! <span className="reels-wave">👋</span></p>
+                    )}
+                    {err('fullName')}
+                  </div>
+
+                  {/* Mobile */}
+                  <div className={qCard(errors.mobile)}>
+                    <p className={qTitle}><span className={qIcon}>📱</span>{L('mobile')} <span className="text-pink-500">*</span></p>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">+91</span>
+                      <input className={`${inputCls} pl-12`} value={form.mobile} inputMode="numeric" autoComplete="tel" maxLength={14}
+                        placeholder="98765 43210" onChange={e => setForm({ ...form, mobile: e.target.value })} />
+                      {normalizeMobile(form.mobile) && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg">✅</span>}
+                    </div>
+                    {err('mobile')}
+                  </div>
+
+                  {/* Age */}
+                  <div className={qCard(errors.ageGroup)}>
+                    <p className={qTitle}><span className={qIcon}>🎂</span>{L('ageGroup')} <span className="text-pink-500">*</span></p>
+                    <Chips options={AGE_GROUPS} value={form.ageGroup} lang={lang} cols={3} emoji
+                      onChange={v => setForm({ ...form, ageGroup: v, guardianConsent: false })} />
+                    {err('ageGroup')}
+                    {form.ageGroup === 'under_18' && (
+                      <label className={`mt-3 flex gap-3 rounded-2xl border-2 p-3 text-sm ${errors.guardianConsent ? 'border-red-300 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
+                        <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-pink-500" checked={form.guardianConsent}
+                          onChange={e => setForm({ ...form, guardianConsent: e.target.checked })} />
+                        <span>👨‍👩‍👧 {L('guardian')}</span>
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Gender (optional) */}
+                  <div className={qCard()}>
+                    <p className={qTitle}><span className={qIcon}>🙋</span>{L('gender')}</p>
+                    <Chips options={GENDERS} value={form.gender} lang={lang} cols={3} emoji
+                      onChange={v => setForm({ ...form, gender: v })} />
+                  </div>
+
+                  {/* Area */}
+                  <div className={qCard(errors.area)}>
+                    <p className={qTitle}><span className={qIcon}>📍</span>{L('area')} <span className="text-pink-500">*</span></p>
+                    <Chips options={AREAS} value={form.area} lang={lang} cols={3} emoji
+                      onChange={v => setForm({ ...form, area: v })} />
+                    {err('area')}
+                  </div>
+
+                  {/* Participant type */}
+                  <div className={qCard(errors.participantType)}>
+                    <p className={qTitle}><span className={qIcon}>✨</span>{L('type')} <span className="text-pink-500">*</span></p>
+                    <Chips options={PARTICIPANT_TYPES} value={form.participantType} lang={lang} emoji
+                      onChange={v => setForm({ ...form, participantType: v })} />
+                    {err('participantType')}
+                  </div>
+
+                  {/* Instagram */}
+                  <div className={qCard(errors.instagram)}>
+                    <p className={qTitle}>
+                      <span className={`${qIcon} bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 text-white`}>
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+                          <rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" />
+                        </svg>
+                      </span>
+                      {L('instagram')}
+                    </p>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-pink-500">@</span>
+                      <input className={`${inputCls} pl-9`} value={form.instagram} autoCapitalize="none" autoCorrect="off"
+                        placeholder="your.handle" onChange={e => setForm({ ...form, instagram: e.target.value })} />
+                    </div>
+                    {errors.instagram && <p className="mt-1 text-sm text-red-600">@username</p>}
+                  </div>
+
+                  {/* Privacy */}
+                  <label className={`flex gap-3 rounded-3xl border-2 p-4 text-xs text-slate-600 ${errors.privacyAccepted ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'}`}>
+                    <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-pink-500" checked={form.privacyAccepted}
+                      onChange={e => setForm({ ...form, privacyAccepted: e.target.checked })} />
+                    <span>🔒 {L('privacy')}</span>
+                  </label>
+                </div>
+
+                {message && <p className="mt-3 text-sm font-semibold text-red-600">{message}</p>}
+                <div className="mt-5 flex gap-3">
                   <button className={`${ghostBtn} !w-1/3`} onClick={() => go('welcome')}>{L('back')}</button>
-                  <button className={primaryBtn} onClick={() => validateDetails() && go('survey')}>{L('next')} →</button>
+                  <button className={primaryBtn} onClick={() => validateDetails() && go('survey')}>{L('next')} 🚀</button>
                 </div>
               </div>
             )}
@@ -475,6 +718,7 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
             {/* ── 3. Survey (Sections B–D, all optional) ── */}
             {step === 'survey' && (
               <div className="space-y-5">
+                <JourneyBar stage={1} lang={lang} />
                 <div>
                   <h2 className="text-xl font-black">{L('survey')}</h2>
                   <p className="mt-1 text-sm text-slate-500">{L('surveyNote')}</p>
