@@ -105,7 +105,7 @@ export const SURVEY: SurveyQuestion[] = [
   },
   {
     id: 'wants_parent_guide', section: 'C', showFor: 'parent',
-    text: { en: 'Would you like a free guide on how to talk with your child about drugs? (collect it at the JKKN counsellor desk on 22 Nov)', ta: 'போதைப்பொருள் பற்றி உங்கள் குழந்தையிடம் பேசுவது எப்படி என்ற இலவச வழிகாட்டி வேண்டுமா? (நவம்பர் 22 அன்று JKKN ஆலோசகர் மேசையில் பெறலாம்)' },
+    text: { en: 'Would you like a free guide on how to talk with your child about drugs?', ta: 'போதைப்பொருள் பற்றி உங்கள் குழந்தையிடம் பேசுவது எப்படி என்ற இலவச வழிகாட்டி வேண்டுமா?' },
     options: [YES, NO],
   },
   // Section D — students only

@@ -131,10 +131,6 @@ const t = {
       'உங்கள் சிறந்த ஒரு ரீல் மட்டுமே கணக்கில். எண்ணிக்கைகள் உங்கள் Insights ஸ்கிரீன்ஷாட் மூலம் சரிபார்க்கப்படும்.',
     ],
   },
-  parentGuide: {
-    en: '📘 You asked for the free parent guide — collect it at the JKKN counsellor desk on 22 Nov.',
-    ta: '📘 நீங்கள் கேட்ட இலவச பெற்றோர் வழிகாட்டியை நவம்பர் 22 அன்று JKKN ஆலோசகர் மேசையில் பெற்றுக்கொள்ளுங்கள்.',
-  },
   deadline: {
     en: 'Post your reel on 22 Nov between 6:59 AM and 10:30 PM. Reels posted outside this time are not counted. Results will be announced by the organisers.',
     ta: 'உங்கள் ரீலை நவம்பர் 22 அன்று காலை 6:59 முதல் இரவு 10:30 வரை பதிவிடுங்கள். இந்த நேரத்திற்கு வெளியே பதிவிடப்படும் ரீல்கள் கணக்கில் எடுக்கப்படாது. முடிவுகள் ஏற்பாட்டாளர்களால் அறிவிக்கப்படும்.',
@@ -812,9 +808,6 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                   </ul>
                   <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">🏆 {L('prizes')}</p>
                   <p className="mt-2 rounded-xl border-2 border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-900">⏰ {L('deadline')}</p>
-                  {survey.wants_parent_guide === 'yes' && (
-                    <p className="mt-2 rounded-xl border-2 border-sky-200 bg-sky-50 p-3 text-sm font-semibold text-sky-900">{L('parentGuide')}</p>
-                  )}
                   <details className="mt-3 rounded-xl border-2 border-slate-200 bg-white p-3 text-sm">
                     <summary className="cursor-pointer font-black text-slate-800">📊 {L('scoringTitle')}</summary>
                     <ul className="mt-2 space-y-1.5 text-slate-700">
