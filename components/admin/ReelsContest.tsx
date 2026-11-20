@@ -10,7 +10,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import {
   Clapperboard, Copy, Download, ExternalLink, Image as ImageIcon, MessageCircle, QrCode, RefreshCw,
-  Save, Search, ShieldAlert, Trophy, Users, CheckCircle2, Baby,
+  Save, Search, ShieldAlert, Trophy, Users, CheckCircle2, Baby, Eye, Megaphone,
 } from 'lucide-react';
 import { AGE_GROUPS, AREAS, GENDERS, PARTICIPANT_TYPES, type Option } from '@/lib/reels';
 import { PRIZE_CATEGORIES, scoreSubmissions, engagementsOf, type ScoreBreakdown } from '@/lib/reelsScore';
@@ -182,6 +182,21 @@ export default function ReelsContest({ expoId, adminToken }: { expoId: string; a
           .some(v => v.toLowerCase().includes(q)))
     : submissions;
 
+  // ── Impact totals for the final report (saved numbers; disqualified reels left out) ──
+  const counted = submissions.filter(s => s.status !== 'disqualified');
+  const sum = (k: 'views' | 'reach') => counted.reduce((t, s) => t + (s[k] ?? 0), 0);
+  const impact = {
+    reels: counted.length,
+    verified: counted.filter(s => s.status === 'valid').length,
+    views: sum('views'),
+    reach: sum('reach'),
+    engagements: counted.reduce((t, s) => t + engagementsOf(s), 0),
+  };
+  const fmt = (v: number) => v.toLocaleString('en-IN');
+  const impactText =
+    `${expo.name} Impact Reel Challenge: ${fmt(impact.reels)} reels created ${fmt(impact.views)} views (impressions), ` +
+    `reached ${fmt(impact.reach)} accounts and got ${fmt(impact.engagements)} likes, comments, shares and saves.`;
+
   const validCount = submissions.filter(s => (drafts[s.id]?.status ?? s.status) === 'valid').length;
   const statCards = [
     { icon: Users, value: participants.length, label: 'Registrations', bg: 'bg-sky-50 border-sky-100', color: 'text-sky-600' },
@@ -338,6 +353,38 @@ export default function ReelsContest({ expoId, adminToken }: { expoId: string; a
           ))}
         </div>
       </div>
+
+      {/* Total impressions — the "how many impressions did we create" figure for the final report */}
+      <section className="rounded-2xl border border-pink-200 bg-gradient-to-r from-pink-50 to-orange-50 p-5 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 mr-auto">
+            <Megaphone className="w-4 h-4 text-pink-600" /> Total impressions <span className="text-slate-400 font-medium">(for the final report)</span>
+          </h3>
+          <button onClick={async () => { await navigator.clipboard.writeText(impactText).catch(() => undefined); toast.success('Copied'); }}
+            className="flex items-center gap-1 text-xs font-semibold border border-pink-200 bg-white rounded-lg px-2.5 py-1.5 hover:bg-pink-50">
+            <Copy className="w-3.5 h-3.5" /> Copy summary
+          </button>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: 'Views (impressions)', value: impact.views, big: true },
+            { label: 'Accounts reached', value: impact.reach },
+            { label: 'Likes, comments, shares, saves', value: impact.engagements },
+            { label: 'Reels counted', value: impact.reels },
+          ].map(c => (
+            <div key={c.label} className="rounded-xl bg-white/80 border border-white p-4">
+              <div className={`font-extrabold tabular-nums tracking-tight ${c.big ? 'text-3xl text-pink-600' : 'text-2xl text-slate-900'}`}>
+                {c.big && <Eye className="inline w-6 h-6 mr-1.5 -mt-1" />}{fmt(c.value)}
+              </div>
+              <div className="text-xs font-medium text-slate-500 mt-0.5">{c.label}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-[11px] text-slate-500">
+          Adds up the numbers from every reel except disqualified ones ({impact.verified} of {impact.reels} verified as valid).
+          Correct a reel&apos;s numbers below and press Save, and these totals update.
+        </p>
+      </section>
 
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative w-full sm:w-72">
