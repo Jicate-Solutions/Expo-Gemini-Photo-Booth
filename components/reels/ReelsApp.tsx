@@ -112,9 +112,32 @@ const t = {
     en: 'Prizes: 1st, 2nd, 3rd · Best Family Reel · Best Student Reel · Most Impactful Message. Certificates for all valid entries.',
     ta: 'பரிசுகள்: 1, 2, 3 · சிறந்த குடும்ப ரீல் · சிறந்த மாணவர் ரீல் · மிகத் தாக்கமுள்ள செய்தி. அனைத்து சரியான பதிவுகளுக்கும் சான்றிதழ்.',
   },
+  scoringTitle: { en: 'How scoring works (100 points)', ta: 'மதிப்பெண் எப்படி? (100 புள்ளிகள்)' },
+  scoring: {
+    en: [
+      'Reach — 30: how many people saw your reel, compared with other entries and with your follower count (small accounts are not at a disadvantage)',
+      'Engagement — 25: likes, comments, shares and saves',
+      'Message — 25 (jury): a clear, positive drug-free message',
+      'Creativity — 15 (jury): original idea, storytelling, music and editing',
+      'Rules — 5: correct hashtags, tags and guidelines followed',
+      'Only your best reel counts. Numbers are checked with your Insights screenshot.',
+    ],
+    ta: [
+      'சென்றடைவு — 30: உங்கள் ரீலை எத்தனை பேர் பார்த்தார்கள் (மற்ற பதிவுகளுடனும் உங்கள் பின்தொடர்பவர் எண்ணிக்கையுடனும் ஒப்பிட்டு — சிறிய கணக்குகளுக்கு பாதிப்பு இல்லை)',
+      'ஈடுபாடு — 25: லைக், கமெண்ட், ஷேர், சேவ்',
+      'செய்தி — 25 (நடுவர்கள்): தெளிவான, நேர்மறையான போதையில்லா செய்தி',
+      'படைப்பாற்றல் — 15 (நடுவர்கள்): புதிய யோசனை, கதை சொல்லல், இசை, எடிட்டிங்',
+      'விதிமுறைகள் — 5: சரியான ஹேஷ்டேக், டேக், வழிகாட்டுதல்கள்',
+      'உங்கள் சிறந்த ஒரு ரீல் மட்டுமே கணக்கில். எண்ணிக்கைகள் உங்கள் Insights ஸ்கிரீன்ஷாட் மூலம் சரிபார்க்கப்படும்.',
+    ],
+  },
+  parentGuide: {
+    en: '📘 You asked for the free parent guide — collect it at the JKKN counsellor desk on 22 Nov.',
+    ta: '📘 நீங்கள் கேட்ட இலவச பெற்றோர் வழிகாட்டியை நவம்பர் 22 அன்று JKKN ஆலோசகர் மேசையில் பெற்றுக்கொள்ளுங்கள்.',
+  },
   deadline: {
-    en: 'Posting deadline and results date will be announced by the organisers.',
-    ta: 'பதிவிடும் கடைசி நேரமும் முடிவு தேதியும் ஏற்பாட்டாளர்களால் அறிவிக்கப்படும்.',
+    en: 'Post your reel on 22 Nov between 6:59 AM and 10:30 PM. Reels posted outside this time are not counted. Results will be announced by the organisers.',
+    ta: 'உங்கள் ரீலை நவம்பர் 22 அன்று காலை 6:59 முதல் இரவு 10:30 வரை பதிவிடுங்கள். இந்த நேரத்திற்கு வெளியே பதிவிடப்படும் ரீல்கள் கணக்கில் எடுக்கப்படாது. முடிவுகள் ஏற்பாட்டாளர்களால் அறிவிக்கப்படும்.',
   },
   submitReel: { en: 'I posted my reel — submit it', ta: 'ரீல் பதிவிட்டேன் — சமர்ப்பி' },
   submitTitle: { en: 'Submit your reel', ta: 'உங்கள் ரீலைச் சமர்ப்பிக்கவும்' },
@@ -788,7 +811,16 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                     {t.donts[lang].map(r => <li key={r}>✕ {r}</li>)}
                   </ul>
                   <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">🏆 {L('prizes')}</p>
-                  <p className="mt-2 text-xs text-slate-500">⏰ {L('deadline')}</p>
+                  <p className="mt-2 rounded-xl border-2 border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-900">⏰ {L('deadline')}</p>
+                  {survey.wants_parent_guide === 'yes' && (
+                    <p className="mt-2 rounded-xl border-2 border-sky-200 bg-sky-50 p-3 text-sm font-semibold text-sky-900">{L('parentGuide')}</p>
+                  )}
+                  <details className="mt-3 rounded-xl border-2 border-slate-200 bg-white p-3 text-sm">
+                    <summary className="cursor-pointer font-black text-slate-800">📊 {L('scoringTitle')}</summary>
+                    <ul className="mt-2 space-y-1.5 text-slate-700">
+                      {t.scoring[lang].map(r => <li key={r}>• {r}</li>)}
+                    </ul>
+                  </details>
                 </div>
 
                 <button className={primaryBtn} onClick={openSubmit}>🎬 {L('submitReel')}</button>
