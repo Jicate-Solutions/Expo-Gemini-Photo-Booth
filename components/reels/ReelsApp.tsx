@@ -9,12 +9,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   AGE_GROUPS, AREAS, GENDERS, HELPLINES, PARTICIPANT_TYPES,
-  captionFor, normalizeMobile, surveyFor, type Lang, type Label, type Option,
+  PLEDGE_TEXT, captionFor, normalizeMobile, surveyFor, type Lang, type Label, type Option, type SurveyAnswers,
 } from '@/lib/reels';
 
 type Step = 'welcome' | 'details' | 'survey' | 'code' | 'submit' | 'done' | 'lookup';
 
-interface Saved { code: string; mobile: string; firstName: string }
+interface Saved { code: string; mobile: string; firstName: string; name?: string; pledged?: boolean }
 
 const t = {
   title: { en: 'Impact Reel Challenge', ta: 'இம்பாக்ட் ரீல் சவால்' },
@@ -51,13 +51,9 @@ const t = {
   area: { en: 'Area', ta: 'பகுதி' },
   type: { en: 'I am a', ta: 'நான் ஒரு' },
   instagram: { en: 'Instagram handle (needed for the contest)', ta: 'இன்ஸ்டாகிராம் பெயர் (போட்டிக்கு தேவை)' },
-  guardian: {
-    en: 'I am 13–17 and my parent/guardian agrees to my taking part.',
-    ta: 'எனக்கு 13–17 வயது; என் பெற்றோர்/பாதுகாவலர் சம்மதிக்கிறார்கள்.',
-  },
   privacy: {
-    en: 'I have read the privacy note: my details are used only to run this contest and plan awareness programmes, are seen only by the organisers (Yi & JKKN), are not shared, and I can ask for them to be deleted.',
-    ta: 'தனியுரிமைக் குறிப்பைப் படித்தேன்: என் விவரங்கள் இந்தப் போட்டி மற்றும் விழிப்புணர்வு திட்டங்களுக்கு மட்டுமே; ஏற்பாட்டாளர்கள் (Yi & JKKN) மட்டுமே பார்ப்பார்கள்; பகிரப்படாது; நீக்கக் கோரலாம்.',
+    en: 'Privacy: your details are used only to run this contest and plan awareness programmes, are seen only by the organisers (Yi & JKKN), are not shared, and you can ask for them to be deleted.',
+    ta: 'தனியுரிமை: உங்கள் விவரங்கள் இந்தப் போட்டி மற்றும் விழிப்புணர்வு திட்டங்களுக்கு மட்டுமே; ஏற்பாட்டாளர்கள் (Yi & JKKN) மட்டுமே பார்ப்பார்கள்; பகிரப்படாது; நீக்கக் கோரலாம்.',
   },
   required: { en: 'Please fill this', ta: 'இதை நிரப்பவும்' },
   survey: { en: 'Quick survey (optional)', ta: 'சிறு கணக்கெடுப்பு (விருப்பம்)' },
@@ -66,6 +62,13 @@ const t = {
     ta: 'உங்கள் பதில்கள் விழிப்புணர்வு திட்டங்களுக்கு உதவும். தனிப்பட்ட பதில்கள் பகிரப்படாது. எந்தக் கேள்வியையும் தவிர்க்கலாம்.',
   },
   shortAnswer: { en: 'Your answer', ta: 'உங்கள் பதில்' },
+  secB: { en: '🧠 Awareness', ta: '🧠 விழிப்புணர்வு' },
+  secC: { en: '👨‍👩‍👧 For parents & guardians', ta: '👨‍👩‍👧 பெற்றோர் & பாதுகாவலர்களுக்கு' },
+  secD: { en: '🎓 For students & youth', ta: '🎓 மாணவர்கள் & இளைஞர்களுக்கு' },
+  secE: { en: '🤝 Your contribution', ta: '🤝 உங்கள் பங்களிப்பு' },
+  pledgeTick: { en: 'I take this pledge', ta: 'நான் இந்த உறுதிமொழியை எடுக்கிறேன்' },
+  pledgeDone: { en: '🎖️ You took the Drug-Free TN pledge!', ta: '🎖️ போதையில்லா தமிழ்நாடு உறுதிமொழி எடுத்தீர்கள்!' },
+  certificate: { en: 'Download my pledge certificate', ta: 'என் உறுதிமொழிச் சான்றிதழைப் பதிவிறக்கு' },
   getCode: { en: 'Get my contest code', ta: 'என் போட்டிக் குறியீட்டைப் பெறு' },
   help: { en: 'Need help? Free helplines', ta: 'உதவி தேவையா? இலவச உதவி எண்கள்' },
   hi: { en: 'You are in', ta: 'நீங்கள் பதிவு செய்துவிட்டீர்கள்' },
@@ -204,13 +207,11 @@ interface Form {
   area: string;
   participantType: string;
   instagram: string;
-  guardianConsent: boolean;
-  privacyAccepted: boolean;
 }
 
 const EMPTY_FORM: Form = {
   fullName: '', mobile: '', ageGroup: '', gender: '', area: '', participantType: '',
-  instagram: '', guardianConsent: false, privacyAccepted: false,
+  instagram: '',
 };
 
 const inputCls =
@@ -233,6 +234,30 @@ const OPTION_EMOJI: Record<string, string> = {
   erode_town: '🏙️', nearby_town: '🏡', outside_district: '🚌',
   student: '🎓', working_professional: '💼', parent: '👨‍👩‍👧', teacher: '👩‍🏫', others: '🙌',
 };
+
+/** Tick-many version of Chips (Section E "How would you like to contribute"). */
+function MultiChips({ options, value, onChange, lang }: {
+  options: Option[]; value: string[]; onChange: (v: string[]) => void; lang: Lang;
+}) {
+  return (
+    <div className="grid gap-2">
+      {options.map(o => {
+        const on = value.includes(o.id);
+        return (
+          <button key={o.id} type="button" role="checkbox" aria-checked={on}
+            onClick={() => onChange(on ? value.filter(x => x !== o.id) : [...value, o.id])}
+            className={`flex items-center gap-3 rounded-2xl border-2 px-3 py-2.5 text-left text-sm font-bold transition-all ${
+              on ? 'border-pink-400 bg-gradient-to-br from-fuchsia-50 to-orange-50 text-pink-700 shadow-md shadow-pink-200'
+                 : 'border-slate-200 bg-white text-slate-600 hover:border-pink-200 active:scale-[0.98]'
+            }`}>
+            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 text-[11px] ${on ? 'border-pink-500 bg-pink-500 text-white' : 'border-slate-300'}`}>{on ? '✓' : ''}</span>
+            {o.label[lang]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function Chips({ options, value, onChange, lang, cols = 2, emoji = false }: {
   options: Option[]; value: string; onChange: (v: string) => void; lang: Lang; cols?: 2 | 3; emoji?: boolean;
@@ -304,7 +329,7 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
   const [expo, setExpo] = useState<{ name: string; handles: string[] } | null>(null);
   const [inactive, setInactive] = useState(false);
   const [form, setForm] = useState<Form>(EMPTY_FORM);
-  const [survey, setSurvey] = useState<Record<string, string>>({});
+  const [survey, setSurvey] = useState<SurveyAnswers>({});
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState<Saved | null>(null);
   const [welcomeBack, setWelcomeBack] = useState(false);
@@ -341,14 +366,13 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
     try { localStorage.setItem('reels:lang', lang); } catch { /* ignore */ }
   }, [lang]);
 
-  // Live "filled X of 6" meter on the details header (the 6 required answers)
+  // Live "filled X of 5" meter on the details header (the 5 required answers)
   const filled = [
     form.fullName.trim().length >= 2,
     !!normalizeMobile(form.mobile),
-    !!form.ageGroup && (form.ageGroup !== 'under_18' || form.guardianConsent),
+    !!form.ageGroup,
     !!form.area,
     !!form.participantType,
-    form.privacyAccepted,
   ].filter(Boolean).length;
   const firstName = form.fullName.trim().split(/\s+/)[0] ?? '';
 
@@ -374,8 +398,6 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
     if (!form.ageGroup) e.ageGroup = true;
     if (!form.area) e.area = true;
     if (!form.participantType) e.participantType = true;
-    if (form.ageGroup === 'under_18' && !form.guardianConsent) e.guardianConsent = true;
-    if (!form.privacyAccepted) e.privacyAccepted = true;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -395,11 +417,32 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
         setMessage(json.error || L('error'));
         return;
       }
-      remember({ code: json.code, mobile: normalizeMobile(form.mobile)!, firstName: json.firstName });
+      remember({
+        code: json.code, mobile: normalizeMobile(form.mobile)!, firstName: json.firstName,
+        name: form.fullName.trim(), pledged: survey.pledge === 'yes',
+      });
       setWelcomeBack(!!json.alreadyRegistered);
       go('code');
     } catch {
       setMessage(L('error'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const downloadCertificate = async () => {
+    if (!saved) return;
+    setBusy(true);
+    try {
+      const { makePledgeCertificate } = await import('@/lib/pledgeCertificate');
+      const blob = await makePledgeCertificate(saved.name || saved.firstName, saved.code);
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `DrugFreeTN-pledge-${saved.code.replace('#', '')}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     } finally {
       setBusy(false);
     }
@@ -625,7 +668,7 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
               <div>
                 <JourneyBar stage={0} lang={lang} />
 
-                {/* Fun header with a live "filled X of 6" meter */}
+                {/* Fun header with a live "filled X of 5" meter */}
                 <div className="relative mb-5 overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-600 via-pink-500 to-orange-400 p-5 text-white shadow-lg shadow-pink-500/25">
                   <span aria-hidden className="reels-float absolute right-3 top-2 text-4xl opacity-90">📝</span>
                   <h2 className="text-2xl font-black leading-tight">
@@ -634,10 +677,10 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                   <p className="mt-1 text-sm font-semibold text-white/90">{L('tellUs')}</p>
                   <div className="mt-4 flex items-center gap-3">
                     <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/25">
-                      <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${(filled / 6) * 100}%` }} />
+                      <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${(filled / 5) * 100}%` }} />
                     </div>
                     <span className="text-xs font-black tabular-nums">
-                      {filled === 6 ? `🎉 ${L('allSet')}` : `${filled}/6`}
+                      {filled === 5 ? `🎉 ${L('allSet')}` : `${filled}/5`}
                     </span>
                   </div>
                 </div>
@@ -670,15 +713,8 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                   <div className={qCard(errors.ageGroup)}>
                     <p className={qTitle}><span className={qIcon}>🎂</span>{L('ageGroup')} <span className="text-pink-500">*</span></p>
                     <Chips options={AGE_GROUPS} value={form.ageGroup} lang={lang} cols={3} emoji
-                      onChange={v => setForm({ ...form, ageGroup: v, guardianConsent: false })} />
+                      onChange={v => setForm({ ...form, ageGroup: v })} />
                     {err('ageGroup')}
-                    {form.ageGroup === 'under_18' && (
-                      <label className={`mt-3 flex gap-3 rounded-2xl border-2 p-3 text-sm ${errors.guardianConsent ? 'border-red-300 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
-                        <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-pink-500" checked={form.guardianConsent}
-                          onChange={e => setForm({ ...form, guardianConsent: e.target.checked })} />
-                        <span>👨‍👩‍👧 {L('guardian')}</span>
-                      </label>
-                    )}
                   </div>
 
                   {/* Gender (optional) */}
@@ -722,12 +758,8 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                     {errors.instagram && <p className="mt-1 text-sm text-red-600">@username</p>}
                   </div>
 
-                  {/* Privacy */}
-                  <label className={`flex gap-3 rounded-3xl border-2 p-4 text-xs text-slate-600 ${errors.privacyAccepted ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'}`}>
-                    <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-pink-500" checked={form.privacyAccepted}
-                      onChange={e => setForm({ ...form, privacyAccepted: e.target.checked })} />
-                    <span>🔒 {L('privacy')}</span>
-                  </label>
+                  {/* Privacy notice (plain text, §6) */}
+                  <p className="rounded-3xl border-2 border-slate-200 bg-white p-4 text-xs text-slate-600">🔒 {L('privacy')}</p>
                 </div>
 
                 {message && <p className="mt-3 text-sm font-semibold text-red-600">{message}</p>}
@@ -738,7 +770,7 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
               </div>
             )}
 
-            {/* ── 3. Survey (Sections B–D, all optional) ── */}
+            {/* ── 3. Survey (Sections B–E, all optional) ── */}
             {step === 'survey' && (
               <div className="space-y-5">
                 <JourneyBar stage={1} lang={lang} />
@@ -746,18 +778,48 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                   <h2 className="text-xl font-black">{L('survey')}</h2>
                   <p className="mt-1 text-sm text-slate-500">{L('surveyNote')}</p>
                 </div>
-                {questions.map((q, i) => (
-                  <div key={q.id}>
-                    <p className="mb-2 text-sm font-semibold text-slate-800">{i + 1}. {q.text[lang]}</p>
-                    {q.options ? (
-                      <Chips options={q.options} value={survey[q.id] ?? ''} lang={lang}
-                        onChange={v => setSurvey({ ...survey, [q.id]: v })} />
-                    ) : (
-                      <input className={inputCls} placeholder={L('shortAnswer')} maxLength={200} value={survey[q.id] ?? ''}
-                        onChange={e => setSurvey({ ...survey, [q.id]: e.target.value })} />
-                    )}
-                  </div>
-                ))}
+                {(['B', 'C', 'D', 'E'] as const).map(sec => {
+                  const qs = questions.filter(q => q.section === sec);
+                  if (!qs.length) return null;
+                  return (
+                    <section key={sec} className="space-y-4 rounded-3xl border-2 border-slate-100 bg-white p-4">
+                      <h3 className="text-base font-black text-slate-900">{L(`sec${sec}` as 'secB')}</h3>
+                      {qs.map(q => {
+                        const v = survey[q.id];
+                        if (q.pledge) {
+                          const on = v === 'yes';
+                          return (
+                            <label key={q.id} className={`block cursor-pointer rounded-2xl border-2 p-4 transition-all ${on ? 'border-emerald-400 bg-emerald-50 shadow-md shadow-emerald-100' : 'border-amber-200 bg-amber-50'}`}>
+                              <p className="text-sm font-bold text-slate-800">✋ {q.text[lang]}</p>
+                              <p className="mt-2 text-lg font-black leading-snug text-emerald-800">“{PLEDGE_TEXT.ta}”</p>
+                              <p className="text-xs italic text-slate-500">{PLEDGE_TEXT.en}</p>
+                              <span className="mt-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+                                <input type="checkbox" className="h-5 w-5 accent-emerald-600" checked={on}
+                                  onChange={e => setSurvey({ ...survey, [q.id]: e.target.checked ? 'yes' : '' })} />
+                                {L('pledgeTick')}
+                              </span>
+                            </label>
+                          );
+                        }
+                        return (
+                          <div key={q.id}>
+                            <p className="mb-2 text-sm font-semibold text-slate-800">{q.text[lang]}</p>
+                            {q.options && q.multi ? (
+                              <MultiChips options={q.options} value={Array.isArray(v) ? v : []} lang={lang}
+                                onChange={list => setSurvey({ ...survey, [q.id]: list })} />
+                            ) : q.options ? (
+                              <Chips options={q.options} value={typeof v === 'string' ? v : ''} lang={lang}
+                                onChange={val => setSurvey({ ...survey, [q.id]: val })} />
+                            ) : (
+                              <input className={inputCls} placeholder={L('shortAnswer')} maxLength={200} value={typeof v === 'string' ? v : ''}
+                                onChange={e => setSurvey({ ...survey, [q.id]: e.target.value })} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </section>
+                  );
+                })}
                 <div className="rounded-2xl bg-sky-50 border border-sky-100 p-4 text-sm">
                   <p className="font-bold text-sky-900">{L('help')}</p>
                   <ul className="mt-2 space-y-1">
@@ -815,6 +877,16 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                     </ul>
                   </details>
                 </div>
+
+                {saved.pledged && (
+                  <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4 text-center">
+                    <p className="font-black text-emerald-800">{L('pledgeDone')}</p>
+                    <button onClick={downloadCertificate} disabled={busy}
+                      className="mt-3 w-full rounded-xl bg-emerald-600 py-3 font-bold text-white shadow hover:bg-emerald-700 disabled:opacity-60">
+                      📜 {L('certificate')}
+                    </button>
+                  </div>
+                )}
 
                 <button className={primaryBtn} onClick={openSubmit}>🎬 {L('submitReel')}</button>
                 <button className="w-full text-sm text-slate-400 underline"

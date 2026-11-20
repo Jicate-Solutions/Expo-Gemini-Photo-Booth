@@ -38,7 +38,7 @@ interface ParticipantRow {
   participant_type: string;
   instagram_handle: string | null;
   guardian_consent: boolean | null;
-  survey: Record<string, string> | null;
+  survey: Record<string, string | string[]> | null;
 }
 
 /**
@@ -78,7 +78,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     // Survey totals: question → answer → count (free-text questions: number of answers only)
     const survey = SURVEY.map(q => {
       const eligible = participants.filter(p => !q.showFor || p.participant_type === q.showFor);
-      const answers = eligible.map(p => p.survey?.[q.id]).filter((a): a is string => typeof a === 'string' && a !== '');
+      // Multi-select answers are lists; single answers are strings
+      const answers = eligible.map(p => p.survey?.[q.id])
+        .filter((a): a is string | string[] => (typeof a === 'string' && a !== '') || (Array.isArray(a) && a.length > 0));
       return {
         id: q.id,
         section: q.section,
@@ -87,7 +89,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         eligible: eligible.length,
         answered: answers.length,
         options: q.options
-          ? q.options.map(o => ({ id: o.id, label: o.label.en, count: answers.filter(a => a === o.id).length }))
+          ? q.options.map(o => ({ id: o.id, label: o.label.en, count: answers.filter(a => (Array.isArray(a) ? a.includes(o.id) : a === o.id)).length }))
           : null,
       };
     });

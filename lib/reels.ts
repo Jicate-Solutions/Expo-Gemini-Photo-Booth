@@ -51,73 +51,115 @@ export const PARTICIPANT_TYPES: Option[] = [
 /** One survey question. `showFor` limits it to a participant type (Sections C and D). */
 export interface SurveyQuestion {
   id: string;
-  section: 'B' | 'C' | 'D';
+  section: 'B' | 'C' | 'D' | 'E';
   showFor?: 'parent' | 'student';
   text: Label;
   /** No options = short free-text answer */
   options?: Option[];
+  /** Several answers allowed (stored as a list) */
+  multi?: boolean;
+  /** Shown as a single pledge tick box (answer 'yes') */
+  pledge?: boolean;
 }
 
 const YES = { id: 'yes', label: { en: 'Yes', ta: 'ஆம்' } };
 const NO = { id: 'no', label: { en: 'No', ta: 'இல்லை' } };
-const PREFER_NOT = { id: 'prefer_not', label: { en: 'Prefer not to say', ta: 'சொல்ல விரும்பவில்லை' } };
+
+/** Pledge text from the plan (Section E). */
+export const PLEDGE_TEXT = {
+  ta: 'நான் போதையில்லா தமிழ்நாட்டுக்காக உறுதி எடுக்கிறேன்.',
+  en: 'I pledge for a Drug-Free Tamil Nadu.',
+};
 
 export const SURVEY: SurveyQuestion[] = [
-  // Section B — everyone
+  // Section B — all participants
   {
-    id: 'problem_seriousness', section: 'B',
-    text: { en: 'How serious do you think the drug problem is in your area?', ta: 'உங்கள் பகுதியில் போதைப்பொருள் பிரச்சினை எவ்வளவு தீவிரமானது என்று நினைக்கிறீர்கள்?' },
+    id: 'first_exposure', section: 'B',
+    text: { en: 'Where do you think young people first come across drugs?', ta: 'இளைஞர்கள் முதன்முதலில் போதைப்பொருளை எங்கே சந்திக்கிறார்கள் என்று நினைக்கிறீர்கள்?' },
     options: [
-      { id: 'not_issue', label: { en: 'Not an issue', ta: 'பிரச்சினை இல்லை' } },
-      { id: 'somewhat', label: { en: 'Somewhat', ta: 'ஓரளவு' } },
-      { id: 'serious', label: { en: 'Serious', ta: 'தீவிரம்' } },
-      { id: 'very_serious', label: { en: 'Very serious', ta: 'மிகவும் தீவிரம்' } },
+      { id: 'friends', label: { en: 'Friends', ta: 'நண்பர்கள்' } },
+      { id: 'social_media', label: { en: 'Social media', ta: 'சமூக ஊடகம்' } },
+      { id: 'nearby_shops', label: { en: 'Nearby shops', ta: 'அருகிலுள்ள கடைகள்' } },
+      { id: 'campus_surroundings', label: { en: 'College or school surroundings', ta: 'கல்லூரி / பள்ளி சுற்றுப்புறம்' } },
       { id: 'not_sure', label: { en: 'Not sure', ta: 'தெரியவில்லை' } },
+      { id: 'other', label: { en: 'Other', ta: 'மற்றவை' } },
     ],
   },
+  // Section C — parents and guardians only
   {
-    id: 'know_warning_signs', section: 'B',
-    text: { en: 'Do you know the warning signs of drug use in a young person?', ta: 'இளைஞர்களிடம் போதைப்பழக்கத்தின் எச்சரிக்கை அறிகுறிகள் உங்களுக்குத் தெரியுமா?' },
+    id: 'talk_frequency', section: 'C', showFor: 'parent',
+    text: { en: 'How often do you talk with your child about their friends and daily activities?', ta: 'உங்கள் குழந்தையின் நண்பர்கள் மற்றும் அன்றாட செயல்பாடுகள் பற்றி எவ்வளவு அடிக்கடி பேசுகிறீர்கள்?' },
     options: [
-      { id: 'yes_well', label: { en: 'Yes, well', ta: 'ஆம், நன்றாக' } },
-      { id: 'a_little', label: { en: 'A little', ta: 'கொஞ்சம்' } },
-      NO,
+      { id: 'daily', label: { en: 'Daily', ta: 'தினமும்' } },
+      { id: 'weekly', label: { en: 'Weekly', ta: 'வாரந்தோறும்' } },
+      { id: 'rarely', label: { en: 'Rarely', ta: 'அரிதாக' } },
+      { id: 'never', label: { en: 'Never', ta: 'ஒருபோதும் இல்லை' } },
     ],
   },
-  // Section C — parents only
   {
-    id: 'children', section: 'C', showFor: 'parent',
-    text: { en: 'How many children do you have, and what are their age groups?', ta: 'உங்களுக்கு எத்தனை குழந்தைகள், அவர்களின் வயது என்ன?' },
-  },
-  {
-    id: 'know_child_friends', section: 'C', showFor: 'parent',
-    text: { en: "Do you know your child's close friends and where they spend their time?", ta: 'உங்கள் குழந்தையின் நெருங்கிய நண்பர்களையும், அவர்கள் நேரம் செலவிடும் இடங்களையும் உங்களுக்குத் தெரியுமா?' },
+    id: 'discussed_risks', section: 'C', showFor: 'parent',
+    text: { en: 'Have you ever talked to your child about the risks of drugs and addiction?', ta: 'போதைப்பொருள் மற்றும் அடிமைத்தனத்தின் ஆபத்துகள் பற்றி உங்கள் குழந்தையிடம் பேசியிருக்கிறீர்களா?' },
     options: [
-      { id: 'mostly', label: { en: 'Yes, mostly', ta: 'ஆம், பெரும்பாலும்' } },
-      { id: 'partly', label: { en: 'Partly', ta: 'ஓரளவு' } },
+      { id: 'regularly', label: { en: 'Yes, regularly', ta: 'ஆம், தொடர்ந்து' } },
+      { id: 'once', label: { en: 'Once', ta: 'ஒருமுறை' } },
       NO,
+      { id: 'not_sure_how', label: { en: 'Not sure how to start', ta: 'எப்படி தொடங்குவது தெரியவில்லை' } },
     ],
   },
   {
-    id: 'worrying_changes', section: 'C', showFor: 'parent',
-    text: { en: 'Have you noticed any worrying changes lately (mood, money, friends, grades, sleep)?', ta: 'சமீபத்தில் கவலைக்குரிய மாற்றங்களைக் கவனித்தீர்களா (மனநிலை, பணம், நண்பர்கள், மதிப்பெண், தூக்கம்)?' },
-    options: [YES, NO, PREFER_NOT],
+    id: 'notice_confidence', section: 'C', showFor: 'parent',
+    text: { en: 'How confident are you that you would notice if your child was exposed to drugs?', ta: 'உங்கள் குழந்தை போதைப்பொருளுக்கு ஆளானால் அதைக் கவனிப்பீர்கள் என்று எவ்வளவு நம்பிக்கை?' },
+    options: [
+      { id: 'very', label: { en: 'Very confident', ta: 'மிகுந்த நம்பிக்கை' } },
+      { id: 'somewhat', label: { en: 'Somewhat', ta: 'ஓரளவு' } },
+      { id: 'not', label: { en: 'Not confident', ta: 'நம்பிக்கை இல்லை' } },
+    ],
   },
+  // Section D — students and youth only
   {
-    id: 'wants_parent_guide', section: 'C', showFor: 'parent',
-    text: { en: 'Would you like a free guide on how to talk with your child about drugs?', ta: 'போதைப்பொருள் பற்றி உங்கள் குழந்தையிடம் பேசுவது எப்படி என்ற இலவச வழிகாட்டி வேண்டுமா?' },
+    id: 'awareness_session', section: 'D', showFor: 'student',
+    text: { en: 'Have you received any awareness session on drugs at your school or college?', ta: 'உங்கள் பள்ளி அல்லது கல்லூரியில் போதைப்பொருள் விழிப்புணர்வு அமர்வு நடந்ததா?' },
     options: [YES, NO],
   },
-  // Section D — students only
   {
-    id: 'comfortable_trusted_adult', section: 'D', showFor: 'student',
-    text: { en: 'Do you feel comfortable talking to a trusted adult about peer pressure?', ta: 'நண்பர்களின் அழுத்தம் பற்றி நம்பிக்கையான பெரியவரிடம் பேச உங்களுக்குத் தயக்கமில்லையா?' },
-    options: [YES, { id: 'sometimes', label: { en: 'Sometimes', ta: 'சில நேரம்' } }, NO],
+    id: 'stay_away_help', section: 'D', showFor: 'student',
+    text: { en: 'What would help you most to stay away from drugs?', ta: 'போதையிலிருந்து விலகியிருக்க உங்களுக்கு எது அதிகம் உதவும்?' },
+    options: [
+      { id: 'sports', label: { en: 'Sports', ta: 'விளையாட்டு' } },
+      { id: 'mentoring', label: { en: 'Mentoring', ta: 'வழிகாட்டுதல்' } },
+      { id: 'counselling', label: { en: 'Counselling', ta: 'ஆலோசனை' } },
+      { id: 'peer_support', label: { en: 'Peer support group', ta: 'நண்பர் ஆதரவுக் குழு' } },
+      { id: 'awareness_events', label: { en: 'Awareness events', ta: 'விழிப்புணர்வு நிகழ்ச்சிகள்' } },
+    ],
+  },
+  // Section E — contribution (all participants)
+  {
+    id: 'contribute', section: 'E', multi: true,
+    text: { en: 'How would you like to contribute to a Drug Free TN? (choose any)', ta: 'போதையில்லா தமிழ்நாட்டுக்கு எப்படி பங்களிக்க விரும்புகிறீர்கள்? (பல தேர்வு)' },
+    options: [
+      { id: 'volunteer', label: { en: 'Volunteer at future events', ta: 'எதிர்கால நிகழ்வுகளில் தன்னார்வலர்' } },
+      { id: 'ambassador', label: { en: 'Become an awareness ambassador in my college/workplace', ta: 'என் கல்லூரி/பணியிடத்தில் விழிப்புணர்வு தூதர்' } },
+      { id: 'social_media', label: { en: 'Spread the message on social media', ta: 'சமூக ஊடகத்தில் செய்தியைப் பரப்புவேன்' } },
+      { id: 'support_counselling', label: { en: 'Support counselling or rehabilitation initiatives', ta: 'ஆலோசனை / மறுவாழ்வு முயற்சிகளுக்கு ஆதரவு' } },
+      { id: 'organise_talk', label: { en: 'Organise a talk in my neighbourhood', ta: 'என் பகுதியில் ஒரு உரை ஏற்பாடு' } },
+      { id: 'donate', label: { en: 'Donate to the campaign', ta: 'இயக்கத்திற்கு நன்கொடை' } },
+      { id: 'report', label: { en: 'Report suspicious activity responsibly', ta: 'சந்தேகமான செயல்களைப் பொறுப்புடன் தெரிவிப்பேன்' } },
+    ],
   },
   {
-    id: 'know_someone_offered', section: 'D', showFor: 'student',
-    text: { en: 'Do you know someone who has been offered drugs?', ta: 'போதைப்பொருள் கொடுக்கப்பட்ட யாரையாவது உங்களுக்குத் தெரியுமா?' },
-    options: [YES, NO, PREFER_NOT],
+    id: 'time_per_month', section: 'E',
+    text: { en: 'How much time can you give per month?', ta: 'மாதத்திற்கு எவ்வளவு நேரம் கொடுக்க முடியும்?' },
+    options: [
+      { id: 'none', label: { en: 'None', ta: 'இல்லை' } },
+      { id: '1_2', label: { en: '1-2 hours', ta: '1-2 மணி நேரம்' } },
+      { id: '3_5', label: { en: '3-5 hours', ta: '3-5 மணி நேரம்' } },
+      { id: 'more', label: { en: 'More', ta: 'அதற்கு மேல்' } },
+    ],
+  },
+  {
+    id: 'pledge', section: 'E', pledge: true,
+    text: { en: 'Take the pledge', ta: 'உறுதிமொழி எடுங்கள்' },
+    options: [{ id: 'yes', label: { en: 'Pledged', ta: 'உறுதி எடுத்தேன்' } }],
   },
 ];
 
@@ -168,12 +210,19 @@ export function isInstagramReelUrl(input: unknown): boolean {
 }
 
 /** Keep only known survey questions and allowed answers (free text trimmed to 200 chars). */
-export function sanitizeSurvey(input: unknown, participantType: string): Record<string, string> {
-  const out: Record<string, string> = {};
+export type SurveyAnswers = Record<string, string | string[]>;
+
+export function sanitizeSurvey(input: unknown, participantType: string): SurveyAnswers {
+  const out: SurveyAnswers = {};
   if (!input || typeof input !== 'object') return out;
   const answers = input as Record<string, unknown>;
   for (const q of surveyFor(participantType)) {
     const a = answers[q.id];
+    if (q.multi && q.options && Array.isArray(a)) {
+      const picked = q.options.filter(o => a.includes(o.id)).map(o => o.id);
+      if (picked.length) out[q.id] = picked;
+      continue;
+    }
     if (typeof a !== 'string' || !a.trim()) continue;
     if (q.options) {
       if (q.options.some(o => o.id === a)) out[q.id] = a;

@@ -22,7 +22,6 @@ export async function POST(req: NextRequest, { params }: { params: { expoId: str
   const participantType = String(body.participantType ?? '');
   const instagramRaw = String(body.instagram ?? '').trim();
   const instagram = instagramRaw ? normalizeInstagram(instagramRaw) : null;
-  const isMinor = ageGroup === 'under_18';
 
   const fields: Record<string, true> = {};
   if (fullName.length < 2) fields.fullName = true;
@@ -32,8 +31,6 @@ export async function POST(req: NextRequest, { params }: { params: { expoId: str
   if (!AREA_IDS.has(area)) fields.area = true;
   if (!PARTICIPANT_TYPE_IDS.has(participantType)) fields.participantType = true;
   if (instagramRaw && !instagram) fields.instagram = true;
-  if (isMinor && body.guardianConsent !== true) fields.guardianConsent = true;
-  if (body.privacyAccepted !== true) fields.privacyAccepted = true;
   if (Object.keys(fields).length) {
     return NextResponse.json({ error: 'Please check the highlighted fields.', fields }, { status: 400 });
   }
@@ -48,7 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { expoId: str
     p_area: area,
     p_participant_type: participantType,
     p_instagram_handle: instagram,
-    p_guardian_consent: isMinor ? true : null,
+    p_guardian_consent: null,
     p_survey: sanitizeSurvey(body.survey, participantType),
   });
 

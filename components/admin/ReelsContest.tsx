@@ -202,7 +202,7 @@ export default function ReelsContest({ expoId, adminToken }: { expoId: string; a
     { icon: Users, value: participants.length, label: 'Registrations', bg: 'bg-sky-50 border-sky-100', color: 'text-sky-600' },
     { icon: Clapperboard, value: submissions.length, label: 'Reels submitted', bg: 'bg-pink-50 border-pink-100', color: 'text-pink-600' },
     { icon: CheckCircle2, value: validCount, label: 'Valid entries', bg: 'bg-emerald-50 border-emerald-100', color: 'text-emerald-600' },
-    { icon: Baby, value: participants.filter(p => p.age_group === 'under_18').length, label: 'Under 18 (guardian OK)', bg: 'bg-amber-50 border-amber-100', color: 'text-amber-600' },
+    { icon: Baby, value: participants.filter(p => p.age_group === 'under_18').length, label: 'Under 18', bg: 'bg-amber-50 border-amber-100', color: 'text-amber-600' },
   ];
 
   const breakdown = (title: string, opts: Option[], key: 'participant_type' | 'area' | 'age_group' | 'gender') => {
@@ -285,11 +285,11 @@ export default function ReelsContest({ expoId, adminToken }: { expoId: string; a
 
   const exportRegistrations = () =>
     downloadCsv(`${expo.name.replace(/\s+/g, '-')}-reels-registrations.csv`, [
-      ['#', 'Registered', 'Code', 'Name', 'Mobile', 'Instagram', 'Age group', 'Gender', 'Area', 'Type', 'Guardian consent', 'Reels submitted'],
+      ['#', 'Registered', 'Code', 'Name', 'Mobile', 'Instagram', 'Age group', 'Gender', 'Area', 'Type', 'Reels submitted'],
       ...participants.slice().reverse().map((p, i) => [
         i + 1, new Date(p.created_at).toLocaleString('en-IN'), p.code, p.full_name, p.mobile, p.instagram_handle ? `@${p.instagram_handle}` : '',
         labelOf(AGE_GROUPS, p.age_group), labelOf(GENDERS, p.gender), labelOf(AREAS, p.area), labelOf(PARTICIPANT_TYPES, p.participant_type),
-        p.guardian_consent ? 'Yes' : '', p.submissionCount,
+        p.submissionCount,
       ]),
     ]);
 
@@ -610,7 +610,7 @@ export default function ReelsContest({ expoId, adminToken }: { expoId: string; a
                       : <span className="text-slate-400">—</span>}
                   </td>
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
-                    {labelOf(AGE_GROUPS, p.age_group)}{p.guardian_consent && <span className="ml-1 text-[10px] font-bold text-amber-700">guardian ✓</span>}
+                    {labelOf(AGE_GROUPS, p.age_group)}
                   </td>
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{labelOf(PARTICIPANT_TYPES, p.participant_type)}</td>
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{labelOf(AREAS, p.area)}</td>
