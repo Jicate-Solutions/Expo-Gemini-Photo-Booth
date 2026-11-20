@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Download, X, Share } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 export default function InstallPrompt() {
   const { canInstall, showIOSGuide, promptInstall } = usePWAInstall();
+  const pathname = usePathname();
   const [dismissed, setDismissed] = useState(() => {
     if (typeof window !== 'undefined') return sessionStorage.getItem('pwa-install-dismissed') === '1';
     return false;
@@ -16,7 +18,8 @@ export default function InstallPrompt() {
     sessionStorage.setItem('pwa-install-dismissed', '1');
   }
 
-  if (dismissed) return null;
+  // Public pages for visitors (reels contest QR) — no "Install Magic Booth" popup
+  if (dismissed || pathname?.startsWith('/reels')) return null;
 
   // iOS: show share-sheet instruction
   if (showIOSGuide) {
