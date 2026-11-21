@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: { expoId: str
   if (gender && !GENDER_IDS.has(gender)) fields.gender = true;
   if (!AREA_IDS.has(area)) fields.area = true;
   if (!PARTICIPANT_TYPE_IDS.has(participantType)) fields.participantType = true;
-  if (instagramRaw && !instagram) fields.instagram = true;
+  // Instagram ID is optional: if what they typed is not a valid username, just leave it empty (never block)
   if (Object.keys(fields).length) {
     return NextResponse.json({ error: 'Please check the highlighted fields.', fields }, { status: 400 });
   }

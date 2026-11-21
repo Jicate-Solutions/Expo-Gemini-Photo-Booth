@@ -54,7 +54,8 @@ const t = {
   gender: { en: 'Gender (optional)', ta: 'பாலினம் (விருப்பம்)' },
   area: { en: 'Area', ta: 'பகுதி' },
   type: { en: 'I am a', ta: 'நான் ஒரு' },
-  instagram: { en: 'Instagram handle (needed for the contest)', ta: 'இன்ஸ்டாகிராம் பெயர் (போட்டிக்கு தேவை)' },
+  instagram: { en: 'Instagram ID (optional)', ta: 'இன்ஸ்டாகிராம் ஐடி (விருப்பம்)' },
+  instagramHint: { en: 'You can skip this. We will see your account from the reel link.', ta: 'இதைத் தவிர்க்கலாம். ரீல் இணைப்பிலிருந்து உங்கள் கணக்கைப் பார்ப்போம்.' },
   privacy: {
     en: 'Privacy: your details are used only to run this contest and plan awareness programmes, are seen only by the organisers (Yi & JKKN), are not shared, and you can ask for them to be deleted.',
     ta: 'தனியுரிமை: உங்கள் விவரங்கள் இந்தப் போட்டி மற்றும் விழிப்புணர்வு திட்டங்களுக்கு மட்டுமே; ஏற்பாட்டாளர்கள் (Yi & JKKN) மட்டுமே பார்ப்பார்கள்; பகிரப்படாது; நீக்கக் கோரலாம்.',
@@ -841,7 +842,7 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                       <input className={`${inputCls} pl-9`} value={form.instagram} autoCapitalize="none" autoCorrect="off"
                         placeholder="your.handle" onChange={e => setForm({ ...form, instagram: e.target.value })} />
                     </div>
-                    {errors.instagram && <p className="mt-1 text-sm text-red-600">@username</p>}
+                    <p className="mt-1.5 text-xs text-slate-400">{L('instagramHint')}</p>
                   </div>
 
                   {/* Privacy notice (plain text, §6) */}
