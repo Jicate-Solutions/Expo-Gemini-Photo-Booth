@@ -178,7 +178,6 @@ const t = {
   lookupTitle: { en: 'Find my code', ta: 'என் குறியீட்டைக் கண்டறி' },
   find: { en: 'Find', ta: 'கண்டறி' },
   notFound: { en: 'No registration found for this number.', ta: 'இந்த எண்ணுக்கு பதிவு இல்லை.' },
-  notMe: { en: 'Not you? Register another person', ta: 'நீங்கள் இல்லையா? வேறு நபரைப் பதிவு செய்' },
   error: { en: 'Something went wrong. Please try again.', ta: 'ஏதோ தவறு. மீண்டும் முயற்சிக்கவும்.' },
   inactive: { en: 'This contest link is not active.', ta: 'இந்தப் போட்டி இணைப்பு செயலில் இல்லை.' },
 } satisfies Record<string, Label | { en: string[]; ta: string[] }>;
@@ -982,13 +981,6 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                   </button>
                 )}
                 <button className={primaryBtn} onClick={openSubmit}>🎬 {L('submitReel')}</button>
-                <button className="w-full text-sm text-slate-400 underline"
-                  onClick={() => {
-                    try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
-                    setSaved(null); setForm(EMPTY_FORM); setSurvey({}); setErrors({}); go('welcome');
-                  }}>
-                  {L('notMe')}
-                </button>
               </div>
             )}
 
