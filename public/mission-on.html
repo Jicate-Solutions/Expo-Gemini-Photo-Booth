@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mission ON – Smart Choices</title>
+<style>
+:root{--bg:#fbfaf7;--surface:#ffffff;--ink:#1c2b33;--muted:#53636b;--line:#d9dfe2;--navy:#0f4c5c;--saffron:#e8772e;--green:#2e8b57;--tint:#e8f1f3;--onnavy:#ffffff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10181c;--surface:#172228;--ink:#eef3f4;--muted:#a3b3ba;--line:#2b3a42;--navy:#7cc4d6;--saffron:#f2975a;--green:#5fc28a;--tint:#1c2d34;--onnavy:#10181c}}
+:root[data-theme="dark"]{--bg:#10181c;--surface:#172228;--ink:#eef3f4;--muted:#a3b3ba;--line:#2b3a42;--navy:#7cc4d6;--saffron:#f2975a;--green:#5fc28a;--tint:#1c2d34;--onnavy:#10181c}
+:root{color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Source Sans 3","Segoe UI",system-ui,sans-serif}
+h1,h2,h3{font-family:"Fraunces",Georgia,"Times New Roman",serif;line-height:1.15;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.banner{background:var(--navy);color:var(--onnavy);padding:56px 0 48px;border-bottom:6px solid var(--saffron)}
+.banner h1{font-size:clamp(2.2rem,6vw,4rem);font-weight:700;letter-spacing:-.01em}
+.banner .sub{font-size:1.2rem;max-width:34em;margin:14px 0 0;opacity:.92}
+.by{margin-top:26px;display:flex;flex-wrap:wrap;gap:8px 28px;font-size:.95rem;opacity:.9}
+.by b{font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;margin-top:-1px;background:var(--surface);border:1px solid var(--line);border-top:0}
+.stat{padding:20px;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat strong{display:block;font:700 2.2rem/1 "Fraunces",Georgia,serif;color:var(--navy)}
+.stat span{font-size:.92rem;color:var(--muted)}
+section{padding:48px 0 8px}
+h2{font-size:1.8rem;margin-bottom:12px}
+p{margin:0 0 14px;max-width:46em}
+.lead{font-size:1.12rem}
+.steps{list-style:none;counter-reset:s;padding:0;margin:22px 0 0;display:grid;gap:0;border-left:3px solid var(--saffron)}
+.steps li{counter-increment:s;padding:6px 0 18px 22px;position:relative}
+.steps li::before{content:counter(s);position:absolute;left:-17px;top:4px;width:31px;height:31px;border-radius:50%;background:var(--saffron);color:#fff;font:700 .95rem/31px "Source Sans 3",sans-serif;text-align:center}
+.steps h3{font-size:1.15rem;margin-bottom:2px}
+.steps p{margin:0;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;margin-top:18px}
+.box{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--green);padding:20px;border-radius:4px}
+.box h3{font-size:1.15rem;margin-bottom:6px}
+.box p{margin:0;color:var(--muted);font-size:.98rem}
+.scroll{overflow-x:auto;margin-top:16px}
+table{border-collapse:collapse;width:100%;min-width:560px;background:var(--surface);font-size:.97rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{background:var(--tint);color:var(--navy);font-weight:700}
+.note{background:var(--tint);border-left:4px solid var(--navy);padding:14px 18px;margin-top:20px;max-width:46em;border-radius:0 4px 4px 0}
+footer{margin-top:48px;padding:24px 0 32px;border-top:1px solid var(--line);color:var(--muted);font-size:.92rem}
+:focus-visible{outline:3px solid var(--saffron);outline-offset:2px}
+@media (max-width:560px){.stat{border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+
+<header class="banner">
+  <div class="wrap">
+    <h1>Mission ON – Smart Choices</h1>
+    <p class="sub">A youth drug awareness programme that gets students talking honestly about their lives, with trained near-peer mentors in small, private circles.</p>
+    <div class="by">
+      <span><b>Organised by</b> Young Indians (Yi), Erode Chapter</span>
+      <span><b>Knowledge partner</b> Manathin Maiyam</span>
+      <span><b>Implemented by</b> JKKN Institutions, YUVA Health Vertical</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats" role="list" aria-label="Programme at a glance">
+    <div class="stat" role="listitem"><strong>1,330</strong><span>students reached</span></div>
+    <div class="stat" role="listitem"><strong>6</strong><span>institutions: 5 schools, 1 college</span></div>
+    <div class="stat" role="listitem"><strong>3.5 hrs</strong><span>per interactive session</span></div>
+    <div class="stat" role="listitem"><strong>10:1</strong><span>students per mentor</span></div>
+    <div class="stat" role="listitem"><strong>30</strong><span>health-science mentors</span></div>
+  </div>
+
+  <section>
+    <h2>What the programme is</h2>
+    <p class="lead">Mission ON – Smart Choices treats substance use as something young people often turn to when coping with stress, not only as a knowledge gap. Lectures and street plays raised awareness but did not get children to talk about their own lives. So the programme was rebuilt around trust.</p>
+    <p>Each session is a play-way, experiential workshop. Students sit in small groups with a mentor who is close to their own age, hear real experiences, and are given a safe space to share theirs.</p>
+  </section>
+
+  <section>
+    <h2>How a session works</h2>
+    <ol class="steps">
+      <li><h3>Ice-breaker</h3><p>Games and group activities build comfort and a sense of psychological safety.</p></li>
+      <li><h3>Storytelling</h3><p>Mentors share real experiences using pseudonyms, so students see that these struggles are talked about openly.</p></li>
+      <li><h3>Small-group sharing</h3><p>Groups of about ten students sit with one mentor. Students share what they are facing, only if they choose to.</p></li>
+      <li><h3>Reflection</h3><p>Students look at what triggers risky choices, such as academic or home stress, peer pressure and curiosity.</p></li>
+      <li><h3>Action plan</h3><p>Each school receives a roadmap covering campus safety, access to substances, counselling and parent and community involvement.</p></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>What makes it different</h2>
+    <div class="cols">
+      <div class="box"><h3>Near-peer mentors</h3><p>Senior students from Pharmacy, Nursing, Dental and Allied Health Sciences at JKKN Institutions lead the circles. They are relatable and trained for the role.</p></div>
+      <div class="box"><h3>A strict 10:1 ratio</h3><p>Small groups mean every student is seen and heard, which makes honest conversation possible.</p></div>
+      <div class="box"><h3>Pseudonyms for everyone</h3><p>Mentors use pseudonyms, and students’ stories are kept confidential to protect everyone involved.</p></div>
+      <div class="box"><h3>Monitored sessions</h3><p>A Program Coordinator monitors all sessions remotely, and mentors work under supervision.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How each session is planned</h2>
+    <p>Before every workshop, the team profiles the institution on two scales so the session fits the audience.</p>
+    <div class="cols">
+      <div class="box"><h3>Institution type</h3><p>A1: private schools with annual fees above ₹1,00,000. A2: private schools below ₹1,00,000. A3: government higher secondary and boys’ schools.</p></div>
+      <div class="box"><h3>Pre-session risk</h3><p>Teachers and administrators rate the school as low (B1), moderate (B2) or high (B3) risk. Staff views are often incomplete, because students rarely tell teachers about their own use.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Where it has run in 2026</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Date</th><th>Institution</th><th>Audience</th><th>Students</th></tr></thead>
+        <tbody>
+          <tr><td>2 Apr</td><td>School 1</td><td>Grade 11, boys and girls, 16–17 yrs</td><td>180</td></tr>
+          <tr><td>17 Jun</td><td>School 2</td><td>Grades 8 and 9</td><td>100</td></tr>
+          <tr><td>20–21 Jul</td><td>School 3</td><td>Grade 9 boys, 14–15 yrs</td><td>300</td></tr>
+          <tr><td>19 Aug</td><td>School 4</td><td>Grades 6–9 boys, 11–15 yrs</td><td>200</td></tr>
+          <tr><td>1 Sep</td><td>College 1</td><td>College students, with a separate group of seniors trained as peer-support facilitators</td><td>450</td></tr>
+          <tr><td>13 Oct</td><td>School 5</td><td>Grade 12 boys, 17 yrs</td><td>100</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">Events took place in Erode district and nearby towns, including Komarapalayam and Pallipalayam, between March and November 2026.</div>
+  </section>
+
+  <footer>
+    Mission ON – Smart Choices · A Young Indians (Yi) Erode initiative · Yi Health · CII
+  </footer>
+</div>
+
+</body>
+</html>
