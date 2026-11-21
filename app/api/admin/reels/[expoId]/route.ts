@@ -60,6 +60,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const meta = (expo.metadata ?? {}) as Record<string, unknown>;
   const enabled = meta.mode === 'marathon' || meta.reels_enabled === true;
   const isPrintedQrExpo = (await getDefaultReelsExpoId()) === expo.id;
+  const resultsPublished = meta.reels_results_published === true;
 
   try {
     const [participants, submissions] = await Promise.all([
@@ -104,7 +105,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const byId = new Map(participants.map(p => [p.id, p]));
     return NextResponse.json({
-      expo: { id: expo.id, name: expo.name, enabled, isPrintedQrExpo },
+      expo: { id: expo.id, name: expo.name, enabled, isPrintedQrExpo, resultsPublished },
       // Individual survey answers are deliberately NOT sent — only the totals below
       participants: participants.map(p => ({
         id: p.id, created_at: p.created_at, code: p.code, code_number: p.code_number,
@@ -138,6 +139,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!(await isAdminRequest(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json().catch(() => null);
+
+  // Publish / hide the public results page (stored on the expo, merged into metadata)
+  if (typeof body?.publishResults === 'boolean') {
+    if (!UUID_RE.test(params.expoId)) return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    const supabase = createClient();
+    const { data: expo } = await supabase.from('expos').select('metadata').eq('id', params.expoId).maybeSingle();
+    if (!expo) return NextResponse.json({ error: 'Expo not found' }, { status: 404 });
+    const metadata = { ...((expo.metadata ?? {}) as Record<string, unknown>), reels_results_published: body.publishResults };
+    const { error } = await supabase.from('expos').update({ metadata }).eq('id', params.expoId);
+    if (error) {
+      console.error('Publish results failed:', error);
+      return NextResponse.json({ error: 'Could not save' }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, resultsPublished: body.publishResults });
+  }
+
   const id = String(body?.id ?? '');
   const fields = (body?.fields ?? {}) as Record<string, unknown>;
   if (!UUID_RE.test(id) || !UUID_RE.test(params.expoId)) {

@@ -76,13 +76,14 @@ export function scoreSubmissions(subs: ScoreInput[]): Map<string, ScoreBreakdown
   return out;
 }
 
+/** `title` is printed on the certificate (no emoji: canvas fonts vary by phone). */
 export const PRIZE_CATEGORIES = [
-  { id: 'first', label: '🥇 1st prize' },
-  { id: 'second', label: '🥈 2nd prize' },
-  { id: 'third', label: '🥉 3rd prize' },
-  { id: 'best_family', label: '👨‍👩‍👧 Best Family Reel' },
-  { id: 'best_student', label: '🎓 Best Student Reel' },
-  { id: 'most_impactful', label: '💡 Most Impactful Message' },
+  { id: 'first', label: '🥇 1st prize', title: '1st Prize' },
+  { id: 'second', label: '🥈 2nd prize', title: '2nd Prize' },
+  { id: 'third', label: '🥉 3rd prize', title: '3rd Prize' },
+  { id: 'best_family', label: '👨‍👩‍👧 Best Family Reel', title: 'Best Family Reel' },
+  { id: 'best_student', label: '🎓 Best Student Reel', title: 'Best Student Reel' },
+  { id: 'most_impactful', label: '💡 Most Impactful Message', title: 'Most Impactful Message' },
 ] as const;
 
 export const SUBMISSION_STATUSES = ['pending', 'valid', 'disqualified'] as const;

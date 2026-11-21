@@ -64,7 +64,7 @@ interface SurveyStat {
 }
 
 interface Data {
-  expo: { id: string; name: string; enabled: boolean; isPrintedQrExpo: boolean };
+  expo: { id: string; name: string; enabled: boolean; isPrintedQrExpo: boolean; resultsPublished: boolean };
   participants: Participant[];
   submissions: Submission[];
   survey: SurveyStat[];
@@ -101,6 +101,7 @@ export default function ReelsContest({ expoId, adminToken }: { expoId: string; a
   const [search, setSearch] = useState('');
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
   const [origin, setOrigin] = useState('');
 
   useEffect(() => setOrigin(window.location.origin), []);
@@ -270,6 +271,31 @@ export default function ReelsContest({ expoId, adminToken }: { expoId: string; a
     }
   };
 
+  // Show / hide the public Results page (leaderboard + certificate download) on the contest link
+  const togglePublish = async () => {
+    const next = !expo.resultsPublished;
+    const ok = window.confirm(next
+      ? 'Publish results now?\n\nEveryone opening the contest link will see the top 10 and prize winners, and participants with a VALID reel can download their certificate.\n\nCheck all reels are marked Valid / Disqualified and prizes are set first.'
+      : 'Hide the results page again?');
+    if (!ok) return;
+    setPublishing(true);
+    try {
+      const res = await fetch(`/api/admin/reels/${expoId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify({ publishResults: next }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not save');
+      setData(prev => prev && ({ ...prev, expo: { ...prev.expo, resultsPublished: next } }));
+      toast.success(next ? 'Results published' : 'Results hidden');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not save');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   const copyLink = async () => {
     await navigator.clipboard.writeText(qrUrl).catch(() => undefined);
     toast.success('Link copied');
@@ -401,11 +427,25 @@ export default function ReelsContest({ expoId, adminToken }: { expoId: string; a
       <section className={`${card} p-5`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2"><Trophy className="w-4 h-4 text-amber-500" /> Leaderboard <span className="text-slate-400 font-medium">(top 10 · best reel per person)</span></h3>
-          <button onClick={exportScores} disabled={!submissions.length}
-            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
-            <Download className="w-3.5 h-3.5" /> Scores CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={togglePublish} disabled={publishing}
+              title="Show the leaderboard and certificate download on the public contest page"
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border disabled:opacity-50 ${
+                expo.resultsPublished ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}>
+              <Trophy className="w-3.5 h-3.5" /> {publishing ? 'Saving…' : expo.resultsPublished ? 'Results LIVE · Hide' : 'Publish results'}
+            </button>
+            <button onClick={exportScores} disabled={!submissions.length}
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
+              <Download className="w-3.5 h-3.5" /> Scores CSV
+            </button>
+          </div>
         </div>
+        {expo.resultsPublished && (
+          <p className="mb-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs font-medium text-amber-800">
+            Results are public: the contest page shows the top 10, prize winners (first name + initial and code only) and certificate download for valid reels.
+          </p>
+        )}
         {leaderboard.length === 0 ? (
           <p className="text-sm text-slate-400 py-4 text-center">No reels submitted yet</p>
         ) : (

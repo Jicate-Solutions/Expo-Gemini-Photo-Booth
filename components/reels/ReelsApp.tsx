@@ -11,8 +11,12 @@ import {
   AGE_GROUPS, AREAS, GENDERS, HELPLINES, PARTICIPANT_TYPES,
   PLEDGE_TEXT, captionFor, normalizeMobile, surveyFor, type Lang, type Label, type Option, type SurveyAnswers,
 } from '@/lib/reels';
+import { PRIZE_CATEGORIES } from '@/lib/reelsScore';
 
-type Step = 'welcome' | 'details' | 'survey' | 'code' | 'submit' | 'done' | 'lookup';
+type Step = 'welcome' | 'details' | 'survey' | 'code' | 'submit' | 'done' | 'lookup' | 'results';
+
+interface PublicEntry { rank: number; name: string; code: string; score: number; prize: string | null }
+interface MyResult { name: string; code: string; eligible: boolean; rank: number | null; score: number | null; prize: string | null }
 
 interface Saved { code: string; mobile: string; firstName: string; name?: string; pledged?: boolean }
 
@@ -62,6 +66,20 @@ const t = {
     ta: 'உங்கள் பதில்கள் விழிப்புணர்வு திட்டங்களுக்கு உதவும். தனிப்பட்ட பதில்கள் பகிரப்படாது. எந்தக் கேள்வியையும் தவிர்க்கலாம்.',
   },
   shortAnswer: { en: 'Your answer', ta: 'உங்கள் பதில்' },
+  resultsOut: { en: '🏆 Results are out! See results & certificate', ta: '🏆 முடிவுகள் வெளியானது! முடிவுகள் & சான்றிதழ்' },
+  resultsTitle: { en: '🏆 Contest results', ta: '🏆 போட்டி முடிவுகள்' },
+  winnersTitle: { en: 'Prize winners', ta: 'பரிசு வென்றவர்கள்' },
+  topTen: { en: 'Top 10', ta: 'முதல் 10' },
+  points: { en: 'pts', ta: 'புள்ளிகள்' },
+  myResult: { en: 'Your result & certificate', ta: 'உங்கள் முடிவு & சான்றிதழ்' },
+  myResultNote: { en: 'Enter the mobile number and contest code you registered with.', ta: 'பதிவு செய்த மொபைல் எண் மற்றும் போட்டிக் குறியீட்டை உள்ளிடுங்கள்.' },
+  checkResult: { en: 'Show my result', ta: 'என் முடிவைக் காட்டு' },
+  yourRank: { en: 'Your rank', ta: 'உங்கள் இடம்' },
+  wonPrize: { en: 'You won', ta: 'நீங்கள் வென்றது' },
+  downloadCert: { en: 'Download my certificate', ta: 'என் சான்றிதழைப் பதிவிறக்கு' },
+  notEligible: { en: 'We could not find a reel marked valid for this code. Certificates are given for reels the jury accepted as valid.', ta: 'இந்தக் குறியீட்டுக்கு செல்லுபடியான ரீல் கிடைக்கவில்லை. நடுவர்கள் ஏற்ற ரீல்களுக்கு மட்டுமே சான்றிதழ்.' },
+  noMatch: { en: 'Mobile number and code do not match. Please check and try again.', ta: 'மொபைல் எண்ணும் குறியீடும் பொருந்தவில்லை. சரிபார்த்து மீண்டும் முயலவும்.' },
+  noResultsYet: { en: 'No valid reels yet.', ta: 'இன்னும் செல்லுபடியான ரீல்கள் இல்லை.' },
   secB: { en: '🧠 Awareness', ta: '🧠 விழிப்புணர்வு' },
   secC: { en: '👨‍👩‍👧 For parents & guardians', ta: '👨‍👩‍👧 பெற்றோர் & பாதுகாவலர்களுக்கு' },
   secD: { en: '🎓 For students & youth', ta: '🎓 மாணவர்கள் & இளைஞர்களுக்கு' },
@@ -326,7 +344,11 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
   const storageKey = `reels:${expoId}`;
   const [lang, setLang] = useState<Lang>('en');
   const [step, setStep] = useState<Step>('welcome');
-  const [expo, setExpo] = useState<{ name: string; handles: string[] } | null>(null);
+  const [expo, setExpo] = useState<{ name: string; handles: string[]; resultsPublished?: boolean } | null>(null);
+  // Results (screen 10)
+  const [board, setBoard] = useState<{ leaderboard: PublicEntry[]; winners: { prize: string; title: string; name: string; code: string }[] } | null>(null);
+  const [resQ, setResQ] = useState({ mobile: '', code: '' });
+  const [myResult, setMyResult] = useState<MyResult | null>(null);
   const [inactive, setInactive] = useState(false);
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [survey, setSurvey] = useState<SurveyAnswers>({});
@@ -365,6 +387,14 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
   useEffect(() => {
     try { localStorage.setItem('reels:lang', lang); } catch { /* ignore */ }
   }, [lang]);
+
+  useEffect(() => {
+    if (step !== 'results' || board) return;
+    fetch(`/api/reels/${expoId}/results`, { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : Promise.reject()))
+      .then(setBoard)
+      .catch(() => setBoard({ leaderboard: [], winners: [] }));
+  }, [step, board, expoId]);
 
   // Live "filled X of 5" meter on the details header (the 5 required answers)
   const filled = [
@@ -441,6 +471,54 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
       const a = document.createElement('a');
       a.href = url;
       a.download = `DrugFreeTN-pledge-${saved.code.replace('#', '')}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openResults = () => {
+    setMyResult(null);
+    if (saved) setResQ({ mobile: saved.mobile, code: saved.code });
+    go('results');
+  };
+
+  const checkResult = async () => {
+    setBusy(true);
+    setMessage('');
+    setMyResult(null);
+    try {
+      const res = await fetch(`/api/reels/${expoId}/results`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resQ),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setMessage(json.error === 'not_found' ? L('noMatch') : json.error || L('error'));
+        return;
+      }
+      setMyResult(json);
+    } catch {
+      setMessage(L('error'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const downloadReelCertificate = async () => {
+    if (!myResult?.eligible) return;
+    setBusy(true);
+    try {
+      const { makeReelCertificate } = await import('@/lib/pledgeCertificate');
+      const title = PRIZE_CATEGORIES.find(p => p.id === myResult.prize)?.title ?? null;
+      const blob = await makeReelCertificate(myResult.name, myResult.code, title);
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ImpactReel-certificate-${myResult.code.replace('#', '')}.png`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } finally {
@@ -651,6 +729,12 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
 
                 {/* Call to action */}
                 <div className="space-y-3 pt-1">
+                  {expo?.resultsPublished && (
+                    <button onClick={openResults}
+                      className="w-full rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-100 to-orange-100 py-4 text-base font-black text-amber-900 shadow-md active:scale-[0.98] transition">
+                      {L('resultsOut')}
+                    </button>
+                  )}
                   <button
                     onClick={() => go('details')}
                     className="reels-shine relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-fuchsia-600 via-pink-500 to-orange-400 py-4 text-lg font-black text-white shadow-xl shadow-pink-500/30 active:scale-[0.98] transition"
@@ -888,6 +972,12 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                   </div>
                 )}
 
+                {expo?.resultsPublished && (
+                  <button onClick={openResults}
+                    className="w-full rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-100 to-orange-100 py-4 text-base font-black text-amber-900 shadow-md">
+                    {L('resultsOut')}
+                  </button>
+                )}
                 <button className={primaryBtn} onClick={openSubmit}>🎬 {L('submitReel')}</button>
                 <button className="w-full text-sm text-slate-400 underline"
                   onClick={() => {
@@ -957,6 +1047,85 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
                 <h2 className="mt-3 text-2xl font-black">{L('doneTitle')}</h2>
                 <p className="mt-3 text-slate-600">{L('doneText')}</p>
                 <button className={`${primaryBtn} mt-6`} onClick={() => go(saved ? 'code' : 'welcome')}>{L('backToCode')}</button>
+              </div>
+            )}
+
+            {/* ── 10. Results: leaderboard + certificate download (after "Publish results") ── */}
+            {step === 'results' && (
+              <div className="space-y-5">
+                <h2 className="text-2xl font-black">{L('resultsTitle')}</h2>
+
+                {!board ? (
+                  <p className="py-6 text-center text-slate-400">…</p>
+                ) : (
+                  <>
+                    {board.winners.length > 0 && (
+                      <section className="rounded-3xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4">
+                        <h3 className="mb-3 font-black text-amber-900">🎉 {L('winnersTitle')}</h3>
+                        <ul className="space-y-2">
+                          {board.winners.map(w => (
+                            <li key={w.prize + w.code} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm">
+                              <span className="text-sm font-bold text-amber-800">{PRIZE_CATEGORIES.find(p => p.id === w.prize)?.label ?? w.title}</span>
+                              <span className="text-right text-sm font-black text-slate-900">{w.name} <span className="block text-[11px] font-semibold text-slate-400">{w.code}</span></span>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    )}
+
+                    <section className="rounded-3xl border-2 border-slate-100 bg-white p-4">
+                      <h3 className="mb-2 font-black">🏅 {L('topTen')}</h3>
+                      {board.leaderboard.length === 0 ? (
+                        <p className="py-4 text-center text-sm text-slate-400">{L('noResultsYet')}</p>
+                      ) : (
+                        <ol className="divide-y divide-slate-100">
+                          {board.leaderboard.map(e => (
+                            <li key={e.code} className="flex items-center gap-3 py-2">
+                              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black ${e.rank === 1 ? 'bg-amber-100 text-amber-700' : e.rank === 2 ? 'bg-slate-200 text-slate-700' : e.rank === 3 ? 'bg-orange-100 text-orange-700' : 'bg-slate-50 text-slate-500'}`}>{e.rank}</span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-bold text-slate-900">{e.name}</span>
+                                <span className="block text-[11px] text-slate-400">{e.code}</span>
+                              </span>
+                              <span className="text-sm font-black tabular-nums text-slate-800">{e.score} <span className="text-[10px] font-semibold text-slate-400">{L('points')}</span></span>
+                            </li>
+                          ))}
+                        </ol>
+                      )}
+                    </section>
+                  </>
+                )}
+
+                {/* Own result + certificate */}
+                <section className="rounded-3xl border-2 border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
+                  <h3 className="font-black text-emerald-900">📜 {L('myResult')}</h3>
+                  <p className="text-xs text-emerald-900/70">{L('myResultNote')}</p>
+                  <input className={inputCls} inputMode="numeric" placeholder="98765 43210" value={resQ.mobile}
+                    onChange={e => setResQ({ ...resQ, mobile: e.target.value })} />
+                  <input className={inputCls} placeholder="#ERDMRTHN001" value={resQ.code}
+                    onChange={e => setResQ({ ...resQ, code: e.target.value })} />
+                  {message && <p className="text-sm font-semibold text-red-600">{message}</p>}
+                  <button className={primaryBtn} disabled={busy} onClick={checkResult}>{busy && !myResult ? '…' : L('checkResult')}</button>
+
+                  {myResult && (
+                    myResult.eligible ? (
+                      <div className="rounded-2xl bg-white p-4 text-center shadow-sm">
+                        <p className="text-sm text-slate-500">{myResult.name} · {myResult.code}</p>
+                        {myResult.prize ? (
+                          <p className="mt-1 text-lg font-black text-amber-700">🏆 {L('wonPrize')}: {PRIZE_CATEGORIES.find(p => p.id === myResult.prize)?.label}</p>
+                        ) : null}
+                        <p className="mt-1 font-bold text-slate-800">{L('yourRank')}: #{myResult.rank} · {myResult.score} {L('points')}</p>
+                        <button onClick={downloadReelCertificate} disabled={busy}
+                          className="mt-3 w-full rounded-xl bg-emerald-600 py-3 font-bold text-white shadow hover:bg-emerald-700 disabled:opacity-60">
+                          📜 {L('downloadCert')}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="rounded-2xl bg-white p-4 text-sm text-slate-600 shadow-sm">{L('notEligible')}</p>
+                    )
+                  )}
+                </section>
+
+                <button className={ghostBtn} onClick={() => go(saved ? 'code' : 'welcome')}>{L('back')}</button>
               </div>
             )}
 

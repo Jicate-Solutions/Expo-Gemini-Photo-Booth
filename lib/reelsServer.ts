@@ -9,6 +9,8 @@ export interface ReelsExpo {
   name: string;
   codePrefix: string;
   handles: string[];
+  /** Admin pressed "Publish results" (plan §7 screen 10) */
+  resultsPublished: boolean;
 }
 
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -72,5 +74,5 @@ export async function getReelsExpo(expoId: string): Promise<ReelsExpo | null> {
       ? (meta.reels_handles as string[])
       : DEFAULT_TAG_HANDLES;
 
-  return { id: data.id, name: data.name, codePrefix: prefix, handles };
+  return { id: data.id, name: data.name, codePrefix: prefix, handles, resultsPublished: meta.reels_results_published === true };
 }
