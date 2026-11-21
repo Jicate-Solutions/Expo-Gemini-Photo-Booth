@@ -58,11 +58,20 @@ export async function generateWithOpenAI(prompt: string, images: string[]): Prom
     const err = json?.error ?? {};
     const code: string | undefined = err.code || err.type;
     const msg: string = err.message || `OpenAI error ${res.status}`;
-    // OpenAI reports "out of credits" as 429 insufficient_quota — treat it as billing (402), not a rate limit
-    if (code === 'insufficient_quota' || code === 'billing_hard_limit_reached') {
+    // OpenAI reports "out of credits" as 429 (insufficient_quota, credit_balance_exhausted, ...) —
+    // treat every billing variant as 402, not a rate limit, so the booth says "credits used up"
+    const lower = `${code ?? ''} ${msg}`.toLowerCase();
+    if (
+      code === 'insufficient_quota' || code === 'billing_hard_limit_reached' || code === 'credit_balance_exhausted' ||
+      lower.includes('no credits') || lower.includes('credit balance') || lower.includes('billing')
+    ) {
       throw new ImageGenError(msg, 402, code);
     }
-    throw new ImageGenError(msg, res.status, code);
+    const err429 = new ImageGenError(msg, res.status, code);
+    // How long OpenAI asks us to wait before retrying (seconds), if it says so
+    const ra = Number(res.headers.get('retry-after-ms')) / 1000 || Number(res.headers.get('retry-after')) || 0;
+    if (ra > 0) (err429 as ImageGenError & { retryAfter?: number }).retryAfter = ra;
+    throw err429;
   }
 
   const b64: string | undefined = json?.data?.[0]?.b64_json;

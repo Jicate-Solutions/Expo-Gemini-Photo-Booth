@@ -113,7 +113,8 @@ export async function POST(req: NextRequest) {
     const images: string[] = [imageData, ...referenceImages.filter((r): r is string => typeof r === 'string' && r.startsWith('data:'))];
 
     const provider = getProvider();
-    const MAX_ATTEMPTS = 3;
+    const MAX_ATTEMPTS = 4;
+    const startedAt = Date.now();
     let lastError: ImageGenError | null = null;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -130,11 +131,18 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         lastError = err instanceof ImageGenError ? err : new ImageGenError(String((err as Error)?.message || err), 500);
         const s = lastError.status;
-        // Only retry temporary server trouble — not billing, rate limits, or bad requests
-        const retryable = s >= 500 && lastError.code !== 'missing_key' && lastError.code !== 'no_image';
+        // Retry temporary server trouble (5xx) and real "too many requests" (429). Never retry
+        // billing (402 — out of credits) or bad requests.
+        const isRateLimit = s === 429;
+        const retryable = (s >= 500 && lastError.code !== 'missing_key' && lastError.code !== 'no_image') || isRateLimit;
         if (!retryable || attempt === MAX_ATTEMPTS) break;
-        console.warn(`${provider} image error ${s} (attempt ${attempt}/${MAX_ATTEMPTS}), retrying...`);
-        await new Promise(r => setTimeout(r, 1500 * attempt)); // 1.5s, 3s
+        // Rate limit: wait what OpenAI asks (or 5s, 10s, 15s); server errors: 1.5s, 3s, 4.5s.
+        const asked = (lastError as ImageGenError & { retryAfter?: number }).retryAfter;
+        const waitMs = isRateLimit ? Math.min(20, asked || 5 * attempt) * 1000 : 1500 * attempt;
+        // Stay inside the 120s function limit: only wait if there is still time for a generation after it
+        if (Date.now() - startedAt + waitMs > 50_000) break;
+        console.warn(`${provider} image error ${s} (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in ${waitMs / 1000}s...`);
+        await new Promise(r => setTimeout(r, waitMs));
       }
     }
 

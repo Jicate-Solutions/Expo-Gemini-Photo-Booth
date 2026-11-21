@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Camera, Users, Briefcase, Star, Download, MessageCircle, ChevronDown, ChevronUp, Search, Pencil, Trash2, Clapperboard } from 'lucide-react';
 import ReelsContest from '@/components/admin/ReelsContest';
 import { ExpoStats } from '@/types';
@@ -282,8 +282,10 @@ export default function ExpoDetail({ expoId, adminToken, isActive = true, onEdit
               {filteredVisitors.map((row, i) => {
                 const phone = row.mobile_number?.replace(/\D/g, '') || '';
                 const waPhone = phone.length === 10 ? `91${phone}` : phone;
+                const isOpen = expandedMobile === row.mobile_number && row.photoCount > 1;
                 return (
-                  <tr key={row.id} className="hover:bg-emerald-50/40 transition-colors">
+                  <Fragment key={row.id}>
+                  <tr className={`hover:bg-emerald-50/40 transition-colors ${isOpen ? 'bg-emerald-50/40' : ''}`}>
                     <td className="px-4 py-3 text-slate-400 tabular-nums">{i + 1}</td>
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
                       {new Date(row.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -338,6 +340,32 @@ export default function ExpoDetail({ expoId, adminToken, isActive = true, onEdit
                       ) : <span className="text-slate-400 text-xs">No image</span>}
                     </td>
                   </tr>
+                  {/* All photos of this person (opened with the "N ⌄" button) */}
+                  {isOpen && (
+                    <tr className="bg-emerald-50/40">
+                      <td colSpan={8 + (hasBib ? 1 : 0) + (hasGender ? 1 : 0)} className="px-4 pb-4 pt-1">
+                        <div className="flex flex-wrap gap-3">
+                          {row.photos.map((p, pi) => (
+                            <a key={p.url + pi} href={p.url} target="_blank" rel="noopener noreferrer"
+                              className="group block w-28 rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm hover:ring-2 hover:ring-emerald-400 transition">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={p.url} alt={p.theme} loading="lazy" className="w-full h-36 object-cover rounded-lg" />
+                              <p className="mt-1 text-[10px] font-semibold text-slate-600 truncate">#{row.photos.length - pi} · {p.theme}</p>
+                              <p className="text-[10px] text-slate-400">
+                                {new Date(p.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+                              </p>
+                            </a>
+                          ))}
+                          {row.photos.length < row.photoCount && (
+                            <p className="self-center text-xs text-slate-400">
+                              {row.photoCount - row.photos.length} photo(s) not stored as an image link
+                            </p>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>
