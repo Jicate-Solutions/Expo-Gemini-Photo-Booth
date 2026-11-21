@@ -29,14 +29,26 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
   const rows = transformations || [];
 
+  // One PERSON = one mobile number (last 10 digits, so "+91 98765 43210" and "9876543210" match)
+  const personKey = (m: string | null, id: string) => {
+    const d = String(m ?? '').replace(/\D/g, '');
+    return d.length >= 10 ? d.slice(-10) : d || id;
+  };
+  const photosPerPerson = new Map<string, number>();
+  rows.forEach(r => {
+    const k = personKey(r.mobile_number, r.id);
+    photosPerPerson.set(k, (photosPerPerson.get(k) || 0) + 1);
+  });
+
   // Summary
-  const uniqueMobiles = new Set(rows.map(r => r.mobile_number));
+  const uniqueMobiles = new Set(photosPerPerson.keys());
   const uniqueGroups = new Set(rows.filter(r => r.group_id).map(r => r.group_id));
 
   const summary = {
     total_photos: rows.length,
     unique_visitors: uniqueMobiles.size,
     total_groups: uniqueGroups.size,
+    repeat_visitors: Array.from(photosPerPerson.values()).filter(n => n > 1).length,
     avg_photos_per_visitor: uniqueMobiles.size > 0
       ? Math.round((rows.length / uniqueMobiles.size) * 10) / 10
       : 0,
@@ -81,7 +93,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     if (r.group_id && groupMap.has(r.group_id)) {
       groupMap.get(r.group_id)!.photo_count++;
       if (!groupVisitors.has(r.group_id)) groupVisitors.set(r.group_id, new Set());
-      groupVisitors.get(r.group_id)!.add(r.mobile_number);
+      groupVisitors.get(r.group_id)!.add(personKey(r.mobile_number, r.id));
     }
   });
   groupVisitors.forEach((visitors, gId) => {

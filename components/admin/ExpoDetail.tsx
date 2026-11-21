@@ -81,7 +81,9 @@ export default function ExpoDetail({ expoId, adminToken, isActive = true, onEdit
   // Build visitor map
   const visitorMap = new Map<string, Row & { photoCount: number; photos: { url: string; theme: string; theme_type: string; created_at: string }[] }>();
   for (const row of visitors) {
-    const key = row.mobile_number || row.id;
+    // Same person = same mobile (last 10 digits), however it was typed
+    const digits = (row.mobile_number || '').replace(/\D/g, '');
+    const key = digits.length >= 10 ? digits.slice(-10) : row.mobile_number || row.id;
     if (!visitorMap.has(key)) visitorMap.set(key, { ...row, photoCount: 0, photos: [] });
     const v = visitorMap.get(key)!;
     v.photoCount++;
@@ -117,10 +119,13 @@ export default function ExpoDetail({ expoId, adminToken, isActive = true, onEdit
   };
 
   const statCards = [
-    { icon: Users, value: stats.summary.unique_visitors, label: 'Unique Visitors', bg: 'bg-sky-50 border-sky-100', color: 'text-sky-600' },
-    { icon: Camera, value: stats.summary.total_photos, label: 'Total Photos', bg: 'bg-emerald-50 border-emerald-100', color: 'text-emerald-600' },
-    { icon: Briefcase, value: stats.summary.total_groups, label: 'Groups', bg: 'bg-amber-50 border-amber-100', color: 'text-amber-600' },
-    { icon: Star, value: stats.summary.avg_photos_per_visitor, label: 'Avg Photos / Visitor', bg: 'bg-violet-50 border-violet-100', color: 'text-violet-600' },
+    { icon: Users, value: stats.summary.unique_visitors, label: 'People (who generated)', bg: 'bg-sky-50 border-sky-100', color: 'text-sky-600' },
+    { icon: Camera, value: stats.summary.total_photos, label: 'Photos generated', bg: 'bg-emerald-50 border-emerald-100', color: 'text-emerald-600' },
+    // Expos without groups (e.g. marathon): show repeat people instead of an empty "Groups 0"
+    stats.summary.total_groups > 0
+      ? { icon: Briefcase, value: stats.summary.total_groups, label: 'Groups', bg: 'bg-amber-50 border-amber-100', color: 'text-amber-600' }
+      : { icon: Users, value: stats.summary.repeat_visitors ?? 0, label: 'People with 2+ photos', bg: 'bg-amber-50 border-amber-100', color: 'text-amber-600' },
+    { icon: Star, value: stats.summary.avg_photos_per_visitor, label: 'Avg photos / person', bg: 'bg-violet-50 border-violet-100', color: 'text-violet-600' },
   ];
 
   const hasBib = visitors.some(r => r.bib_number);
@@ -241,7 +246,7 @@ export default function ExpoDetail({ expoId, adminToken, isActive = true, onEdit
       <section className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-4 sm:px-5 py-4 border-b border-slate-100 flex items-center gap-3 flex-wrap">
           <h3 className="text-sm font-bold text-slate-900 mr-auto">
-            Visitors <span className="text-slate-400 font-medium">({filteredVisitors.length})</span>
+            People <span className="text-slate-400 font-medium">({filteredVisitors.length} people · {visitors.length} photos)</span>
           </h3>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

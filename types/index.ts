@@ -96,6 +96,8 @@ export interface ExpoStats {
     total_photos: number;
     unique_visitors: number;
     total_groups: number;
+    /** People who generated 2 or more photos */
+    repeat_visitors?: number;
     avg_photos_per_visitor: number;
   };
   theme_breakdown: { type: string; count: number }[];
