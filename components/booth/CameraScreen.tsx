@@ -104,8 +104,8 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
   };
 
   const capturePhoto = () => {
-    // Longer countdown for the full-body shot, so the runner can step back
-    const start = step === 'body' ? 8 : 3;
+    // 3-second countdown for every photo (face and body, front and back camera)
+    const start = 3;
     setCountdown(start);
     let count = start;
     const interval = setInterval(() => {
@@ -235,7 +235,7 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
                   {isBodyStep ? (
                     <>
                       <p className="font-bold text-orange-800">✓ Face done! Now the full-body photo</p>
-                      <p className="text-orange-700/80">Staff tap the button → runner walks back 2–3 m → 8-second countdown</p>
+                      <p className="text-orange-700/80">Runner stands 2–3 m back → tap the button → 3-second countdown</p>
                     </>
                   ) : (
                     <>
@@ -364,7 +364,7 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
               {isBodyStep
                 ? facing === 'environment'
                   ? 'Back camera: fit the runner from head to feet between the lines, then tap the button. Ask them to stand straight, arms relaxed.'
-                  : 'Tap the button, then step back — an 8-second countdown gives you time. Stand straight, arms relaxed. Skip if there is no space.'
+                  : 'Stand 2–3 m back with your whole body in the frame, then tap the button — a 3-second countdown starts. Stand straight, arms relaxed. Skip if there is no space.'
                 : facing === 'environment'
                   ? 'Back camera: fit the runner\'s face inside the circle, then tap the button — a 3-second countdown starts'
                   : 'Fit your face inside the circle, then tap the button — a 3-second countdown starts'}
