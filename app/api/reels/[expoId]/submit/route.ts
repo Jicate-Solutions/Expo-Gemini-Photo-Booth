@@ -10,6 +10,9 @@ const METRICS = ['followers', 'reach', 'views', 'likes', 'comments', 'shares', '
 /**
  * Public: submit a reel (multipart form). The participant proves who they are with
  * mobile + their contest code. The Insights screenshot goes to the private 'reel-insights' bucket.
+ *
+ * ONE ENTRY PER PERSON: submitting again UPDATES that entry (new link / newer screenshot),
+ * until the jury marks it Valid or Disqualified — then it is locked.
  */
 export async function POST(req: NextRequest, { params }: { params: { expoId: string } }) {
   const expo = await getReelsExpo(params.expoId);
@@ -40,6 +43,22 @@ export async function POST(req: NextRequest, { params }: { params: { expoId: str
     return NextResponse.json(
       { error: 'Mobile number and contest code do not match. Please check and try again.' },
       { status: 403 },
+    );
+  }
+
+  // Their one entry (if any). Once the jury has checked it, it can no longer be changed.
+  const { data: existing } = await supabase
+    .from('reel_submissions')
+    .select('id, status, insights_path')
+    .eq('expo_id', expo.id)
+    .eq('participant_id', participant.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing && existing.status !== 'pending') {
+    return NextResponse.json(
+      { error: 'Your reel has already been checked by the jury and can no longer be changed.', locked: true },
+      { status: 409 },
     );
   }
 
@@ -74,6 +93,22 @@ export async function POST(req: NextRequest, { params }: { params: { expoId: str
     return NextResponse.json({ error: 'Could not upload the screenshot. Please try again.' }, { status: 500 });
   }
 
+  if (existing) {
+    // Update the one entry: numbers not given this time are cleared (they belong to the old screenshot)
+    const update: Record<string, unknown> = { reel_url: reelUrl, insights_path: path, updated_at: new Date().toISOString() };
+    for (const m of METRICS) update[m] = metrics[m] ?? null;
+    const { error } = await supabase.from('reel_submissions').update(update).eq('id', existing.id).eq('status', 'pending');
+    if (error) {
+      console.error('Reel update failed:', error);
+      return NextResponse.json({ error: 'Could not save your entry. Please try again.' }, { status: 500 });
+    }
+    // Remove the old screenshot (best effort)
+    if (existing.insights_path && existing.insights_path !== path) {
+      await supabase.storage.from('reel-insights').remove([existing.insights_path]).catch(() => undefined);
+    }
+    return NextResponse.json({ success: true, updated: true });
+  }
+
   const { error } = await supabase.from('reel_submissions').insert({
     expo_id: expo.id,
     participant_id: participant.id,
@@ -86,5 +121,5 @@ export async function POST(req: NextRequest, { params }: { params: { expoId: str
     return NextResponse.json({ error: 'Could not save your entry. Please try again.' }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, updated: false });
 }

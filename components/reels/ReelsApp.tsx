@@ -141,7 +141,7 @@ const t = {
       'Message — 25 (jury): a clear, positive drug-free message',
       'Creativity — 15 (jury): original idea, storytelling, music and editing',
       'Rules — 5: correct hashtags, tags and guidelines followed',
-      'Only your best reel counts. Numbers are checked with your Insights screenshot.',
+      'One entry per person (you can update it until the jury checks it). Numbers are checked with your Insights screenshot.',
     ],
     ta: [
       'சென்றடைவு — 30: உங்கள் ரீலை எத்தனை பேர் பார்த்தார்கள் (மற்ற பதிவுகளுடனும் உங்கள் பின்தொடர்பவர் எண்ணிக்கையுடனும் ஒப்பிட்டு — சிறிய கணக்குகளுக்கு பாதிப்பு இல்லை)',
@@ -149,7 +149,7 @@ const t = {
       'செய்தி — 25 (நடுவர்கள்): தெளிவான, நேர்மறையான போதையில்லா செய்தி',
       'படைப்பாற்றல் — 15 (நடுவர்கள்): புதிய யோசனை, கதை சொல்லல், இசை, எடிட்டிங்',
       'விதிமுறைகள் — 5: சரியான ஹேஷ்டேக், டேக், வழிகாட்டுதல்கள்',
-      'உங்கள் சிறந்த ஒரு ரீல் மட்டுமே கணக்கில். எண்ணிக்கைகள் உங்கள் Insights ஸ்கிரீன்ஷாட் மூலம் சரிபார்க்கப்படும்.',
+      'ஒருவருக்கு ஒரு பதிவு மட்டுமே (நடுவர்கள் சரிபார்க்கும் வரை புதுப்பிக்கலாம்). எண்ணிக்கைகள் உங்கள் Insights ஸ்கிரீன்ஷாட் மூலம் சரிபார்க்கப்படும்.',
     ],
   },
   deadline: {
@@ -169,9 +169,10 @@ const t = {
   numbers: { en: 'Numbers from Insights (optional)', ta: 'Insights எண்கள் (விருப்பம்)' },
   submit: { en: 'Submit entry', ta: 'சமர்ப்பி' },
   doneTitle: { en: 'Entry received! 🎉', ta: 'பதிவு பெறப்பட்டது! 🎉' },
+  doneUpdated: { en: 'Your entry was updated! ✅', ta: 'உங்கள் பதிவு புதுப்பிக்கப்பட்டது! ✅' },
   doneText: {
-    en: 'Our team will check your reel. Keep your account public until results are announced. You can submit a better reel later — only your best one counts.',
-    ta: 'எங்கள் குழு உங்கள் ரீலைச் சரிபார்க்கும். முடிவுகள் வரும் வரை கணக்கை public ஆக வைத்திருங்கள். பின்னர் சிறந்த ரீலைச் சமர்ப்பிக்கலாம் — சிறந்தது மட்டுமே கணக்கிடப்படும்.',
+    en: 'Our team will check your reel. Keep your account public until results are announced. One entry per person: until the jury checks it, you can update it here with a newer screenshot or the correct link.',
+    ta: 'எங்கள் குழு உங்கள் ரீலைச் சரிபார்க்கும். முடிவுகள் வரும் வரை கணக்கை public ஆக வைத்திருங்கள். ஒருவருக்கு ஒரு பதிவு மட்டுமே: நடுவர்கள் சரிபார்க்கும் வரை, புதிய ஸ்கிரீன்ஷாட் அல்லது சரியான இணைப்புடன் இங்கே புதுப்பிக்கலாம்.',
   },
   backToCode: { en: 'Back to my code', ta: 'என் குறியீட்டுக்குத் திரும்பு' },
   lookupTitle: { en: 'Find my code', ta: 'என் குறியீட்டைக் கண்டறி' },
@@ -363,6 +364,7 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
   const [metrics, setMetrics] = useState<Record<string, string>>({});
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [lookupMobile, setLookupMobile] = useState('');
+  const [entryUpdated, setEntryUpdated] = useState(false);
 
   const L = (k: keyof typeof t) => (t[k] as Label)[lang];
 
@@ -570,6 +572,7 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
       const res = await fetch(`/api/reels/${expoId}/submit`, { method: 'POST', body: fd });
       const json = await res.json();
       if (!res.ok) { setMessage(json.error || L('error')); return; }
+      setEntryUpdated(!!json.updated);
       go('done');
     } catch {
       setMessage(L('error'));
@@ -1044,7 +1047,7 @@ export default function ReelsApp({ expoId }: { expoId: string }) {
             {step === 'done' && (
               <div className="text-center">
                 <div className="text-6xl">🏅</div>
-                <h2 className="mt-3 text-2xl font-black">{L('doneTitle')}</h2>
+                <h2 className="mt-3 text-2xl font-black">{entryUpdated ? L('doneUpdated') : L('doneTitle')}</h2>
                 <p className="mt-3 text-slate-600">{L('doneText')}</p>
                 <button className={`${primaryBtn} mt-6`} onClick={() => go(saved ? 'code' : 'welcome')}>{L('backToCode')}</button>
               </div>
