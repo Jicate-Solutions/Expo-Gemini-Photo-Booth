@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Camera, FlipHorizontal, ArrowLeft, VideoOff, User, RotateCcw } from 'lucide-react';
+import { Camera, FlipHorizontal, ArrowLeft, VideoOff, User, RotateCcw, SwitchCamera } from 'lucide-react';
 
 interface CameraScreenProps {
   /** bodyPhoto is only set when captureBody is on and the runner didn't skip step 2 */
@@ -19,7 +19,12 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
   const [facePhoto, setFacePhoto] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  // Ref (not state) so cleanup and camera switching always stop the CURRENT stream
+  const streamRef = useRef<MediaStream | null>(null);
+  // 'user' = front (selfie) camera, 'environment' = back camera. Kept for both face and body steps.
+  const [facing, setFacing] = useState<'user' | 'environment'>('user');
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [switching, setSwitching] = useState(false);
   const [mirrored, setMirrored] = useState(true);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -27,36 +32,50 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    startCamera();
+    startCamera('user');
     return () => stopCamera();
   }, []);
 
-  const startCamera = async () => {
+  const startCamera = async (want: 'user' | 'environment'): Promise<boolean> => {
     try {
       // Check if mediaDevices is available (may be blocked in insecure contexts)
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setError('Camera not available. Please use HTTPS or a supported browser.');
-        return;
+        return false;
       }
 
-      // Try front camera first, fall back to any camera
+      // Release the old camera first: many phones cannot open front and back at the same time
+      stopCamera();
+
+      // Ask for the chosen camera; 'exact' makes phones really switch, then relax step by step
+      const size = { width: { ideal: 1920 }, height: { ideal: 1080 } };
       let s: MediaStream;
       try {
-        s = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } },
-        });
+        s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: want }, ...size } });
       } catch {
-        // Fallback: try without facingMode constraint
-        s = await navigator.mediaDevices.getUserMedia({ video: true });
+        try {
+          s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: want, ...size } });
+        } catch {
+          s = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
       }
 
-      setStream(s);
+      streamRef.current = s;
+      // The selfie camera is shown mirrored (like a mirror); the back camera is not
+      setFacing(want);
+      setMirrored(want === 'user');
+      // Only show the switch button when the device really has 2+ cameras (labels need permission first)
+      navigator.mediaDevices.enumerateDevices()
+        .then(list => setHasMultipleCameras(list.filter(d => d.kind === 'videoinput').length > 1))
+        .catch(() => undefined);
       if (videoRef.current) {
         videoRef.current.srcObject = s;
         // Ensure video plays in PWA standalone mode
         try { await videoRef.current.play(); } catch {}
       }
       setCameraReady(true);
+      setError('');
+      return true;
     } catch (err: any) {
       if (err?.name === 'NotAllowedError') {
         setError('Camera permission denied. Please allow camera access in your browser/device settings and reload.');
@@ -65,11 +84,23 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
       } else {
         setError('Could not access camera. Please allow camera permission and reload.');
       }
+      return false;
     }
   };
 
   const stopCamera = () => {
-    stream?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  };
+
+  // Front ⇄ back camera. If the other camera fails, go back to the one that worked.
+  const switchCamera = async () => {
+    if (switching || countdown !== null) return;
+    setSwitching(true);
+    const from = facing;
+    const ok = await startCamera(from === 'user' ? 'environment' : 'user');
+    if (!ok) await startCamera(from);
+    setSwitching(false);
   };
 
   const capturePhoto = () => {
@@ -180,7 +211,7 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
                 className="h-12 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors">
                 Go Back
               </button>
-              <button onClick={() => { setError(''); startCamera(); }}
+              <button onClick={() => { setError(''); startCamera(facing); }}
                 className={`h-12 rounded-xl ${T.primary} text-white font-bold shadow-lg flex items-center justify-center gap-2 transition-colors`}>
                 <Camera className="w-4 h-4" /> Retry
               </button>
@@ -281,14 +312,27 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
             <canvas ref={canvasRef} className="hidden" />
 
             {/* Controls */}
-            <div className="flex items-center justify-center gap-8 mt-7">
-              <button
-                onClick={() => setMirrored(!mirrored)}
-                className="w-12 h-12 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-sm flex items-center justify-center transition-colors"
-                title="Flip camera"
-              >
-                <FlipHorizontal className="w-5 h-5" />
-              </button>
+            <div className="flex items-center justify-center gap-6 sm:gap-8 mt-7">
+              <div className="flex items-center gap-2">
+                {hasMultipleCameras && (
+                  <button
+                    onClick={switchCamera}
+                    disabled={switching || countdown !== null}
+                    className="h-12 px-4 rounded-full bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 shadow-sm flex items-center gap-1.5 text-sm font-semibold transition-colors disabled:opacity-40"
+                    title={facing === 'user' ? 'Switch to back camera' : 'Switch to front camera'}
+                  >
+                    <SwitchCamera className={`w-5 h-5 ${switching ? 'animate-spin' : ''}`} />
+                    {facing === 'user' ? 'Back' : 'Front'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setMirrored(!mirrored)}
+                  className="w-12 h-12 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-sm flex items-center justify-center transition-colors"
+                  title="Mirror the picture"
+                >
+                  <FlipHorizontal className="w-5 h-5" />
+                </button>
+              </div>
               {/* Capture button */}
               <div className="relative">
                 <div className={`absolute inset-0 rounded-full ${T.shutterGlow} blur-xl animate-pulse`} />
@@ -318,8 +362,12 @@ export default function CameraScreen({ onCapture, onBack, expoMode, captureBody 
             </div>
             <p className="text-center text-slate-500 text-sm mt-4">
               {isBodyStep
-                ? 'Tap the button, then step back — an 8-second countdown gives you time. Stand straight, arms relaxed. Skip if there is no space.'
-                : 'Fit your face inside the circle, then tap the button — a 3-second countdown starts'}
+                ? facing === 'environment'
+                  ? 'Back camera: fit the runner from head to feet between the lines, then tap the button. Ask them to stand straight, arms relaxed.'
+                  : 'Tap the button, then step back — an 8-second countdown gives you time. Stand straight, arms relaxed. Skip if there is no space.'
+                : facing === 'environment'
+                  ? 'Back camera: fit the runner\'s face inside the circle, then tap the button — a 3-second countdown starts'
+                  : 'Fit your face inside the circle, then tap the button — a 3-second countdown starts'}
             </p>
           </div>
         )}
